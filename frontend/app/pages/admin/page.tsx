@@ -60,10 +60,10 @@ export default function AdminPage() {
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>
-              <TableHead className="py-4">Użytkownik</TableHead>
-              <TableHead className="py-4">Rola</TableHead>
-              <TableHead className="py-4">Status</TableHead>
-              <TableHead className="text-right py-4">Akcje</TableHead>
+              <TableHead className="py-4 text-black">Użytkownik</TableHead>
+              <TableHead className="py-4 text-black">Rola</TableHead>
+              <TableHead className="py-4 text-black">Status</TableHead>
+              <TableHead className="text-right py-4 text-black">Akcje</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,21 +86,21 @@ export default function AdminPage() {
                   </span>
                 </TableCell>
                 <TableCell className="py-4">
-                  <Badge 
-                    variant={user.status === 'Aktywny' ? 'default' : 'secondary'} 
+                  <Badge
+                    variant={user.status === 'Aktywny' ? 'default' : 'secondary'}
                     className={
-                      user.status === 'Aktywny' 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200 shadow-none' 
+                      user.status === 'Aktywny'
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200 shadow-none'
                         : user.status === 'Oczekujący'
-                        ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 shadow-none'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200 shadow-none'
+                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 shadow-none'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200 shadow-none'
                     }
                   >
                     {user.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right py-4">
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md">
+                  <button className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors">
                     Edytuj
                   </button>
                 </TableCell>
