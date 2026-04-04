@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Presentation, Dumbbell, MessageSquare, LayoutDashboard } from "lucide-react"
+import { Calendar, Presentation, Dumbbell, MessageSquare, LayoutDashboard, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -39,6 +39,11 @@ const items = [
     title: "Ankiety zmęczenia",
     url: "/pages/coach/surveys",
     icon: MessageSquare,
+  },
+  {
+    title: "Moje dane",
+    url: "/pages/coach/settings",
+    icon: Settings,
   },
 ]
 

@@ -26,7 +26,7 @@ const items = [
     icon: LayoutDashboard,
   },
   {
-    title: "Ustawienia",
+    title: "Moje dane",
     url: "/pages/admin/settings",
     icon: Settings,
   },

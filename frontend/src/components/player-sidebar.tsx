@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, Presentation, Dumbbell, MessageCircle, Activity, LayoutDashboard } from "lucide-react"
+import { CalendarDays, Presentation, Dumbbell, MessageCircle, Activity, LayoutDashboard, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -44,6 +44,11 @@ const items = [
     title: "Ankieta zmęczenia",
     url: "/pages/player/fatigue",
     icon: Activity,
+  },
+  {
+    title: "Moje dane",
+    url: "/pages/player/settings",
+    icon: Settings,
   },
 ]
 
