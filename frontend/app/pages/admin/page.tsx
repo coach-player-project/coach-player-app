@@ -43,11 +43,11 @@ const users = [
 
 export default function AdminPage() {
   return (
-    <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 max-w-6xl mx-auto">
+    <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border max-w-6xl mx-auto">
       <div className="mb-8 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Zarządzanie Użytkownikami</h1>
-          <p className="text-muted-foreground mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold tracking-tight text-black">Zarządzanie Użytkownikami</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Przeglądaj i zarządzaj uprawnieniami użytkowników w systemie.
           </p>
         </div>
@@ -56,32 +56,32 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
         <Table>
-          <TableHeader className="bg-gray-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="py-4 text-black">Użytkownik</TableHead>
-              <TableHead className="py-4 text-black">Rola</TableHead>
-              <TableHead className="py-4 text-black">Status</TableHead>
-              <TableHead className="text-right py-4 text-black">Akcje</TableHead>
+              <TableHead className="py-4 text-foreground text-black">Użytkownik</TableHead>
+              <TableHead className="py-4 text-foreground text-black">Rola</TableHead>
+              <TableHead className="py-4 text-foreground text-black">Status</TableHead>
+              <TableHead className="text-right py-4 text-foreground text-black">Akcje</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id} className="hover:bg-gray-50/50 transition-colors group">
+              <TableRow key={user.id} className="transition-colors group">
                 <TableCell className="font-medium flex items-center gap-4 py-4">
-                  <Avatar className="h-10 w-10 border shadow-sm">
-                    <AvatarFallback className="bg-blue-50 text-blue-700 font-bold text-xs tracking-wider">
+                  <Avatar className="h-10 w-10 border border-border shadow-sm">
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs tracking-wider">
                       {user.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold text-gray-900">{user.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{user.email}</div>
+                    <div className="font-semibold text-black">{user.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
                   </div>
                 </TableCell>
                 <TableCell className="py-4">
-                  <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2.5 py-1 rounded-md">
+                  <span className="text-sm font-medium text-primary/40 bg-muted px-2.5 py-1 rounded-md">
                     {user.role}
                   </span>
                 </TableCell>
@@ -90,17 +90,17 @@ export default function AdminPage() {
                     variant={user.status === 'Aktywny' ? 'default' : 'secondary'}
                     className={
                       user.status === 'Aktywny'
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200 shadow-none'
+                        ? 'bg-primary/20 text-primary hover:bg-primary/30 border-primary/20 shadow-none'
                         : user.status === 'Oczekujący'
-                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 shadow-none'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200 shadow-none'
+                          ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-amber-500/20 shadow-none'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80 border-border shadow-none'
                     }
                   >
                     {user.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right py-4">
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors">
+                  <button className="text-sm font-medium text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-md transition-colors">
                     Edytuj
                   </button>
                 </TableCell>

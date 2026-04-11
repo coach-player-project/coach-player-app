@@ -45,7 +45,7 @@ export function AdminSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url} className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all">
+                    <Link href={item.url} className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50/50 rounded-md transition-all">
                       <item.icon className="h-5 w-5" />
                       <span className="font-medium">{item.title}</span>
                     </Link>

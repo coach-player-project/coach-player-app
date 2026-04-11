@@ -16,15 +16,15 @@ export default function TestApi() {
   return (
     <main className="p-8">
       <h1 className="text-3xl mb-6">Test połączenia z API</h1>
-      
+
       {error && (
         <div className="bg-red-100 p-4 rounded mb-4">
           Błąd: {error}
         </div>
       )}
-      
+
       {data ? (
-        <pre className="bg-gray-100 p-4 rounded overflow-auto">
+        <pre className="bg-gray-200 p-4 rounded overflow-auto">
           {JSON.stringify(data, null, 2)}
         </pre>
       ) : (
