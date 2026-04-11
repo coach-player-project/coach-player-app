@@ -10,7 +10,7 @@ export function SettingsPage() {
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 space-y-6">
-          
+
           <div className="flex flex-col md:flex-row gap-6 border-b border-gray-100 pb-6">
             <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0 mx-auto md:mx-0">
               <User className="w-10 h-10 text-gray-400" />
@@ -59,7 +59,7 @@ export function SettingsPage() {
               <input type="password" className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Wpisz nowe hasło" />
             </div>
           </div>
-          
+
           <div className="pt-4 flex justify-end">
             <button className="px-6 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors">
               Zapisz zmiany
