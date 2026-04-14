@@ -62,6 +62,9 @@ export default function LoginPage() {
       if (data.refresh_token) {
         localStorage.setItem("refresh_token", data.refresh_token);
       }
+      if (data.user && data.user.role) {
+        localStorage.setItem("user_role", data.user.role);
+      }
 
       setSuccess(true);
       

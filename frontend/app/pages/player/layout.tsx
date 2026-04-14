@@ -1,9 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { PlayerSidebar } from "@/components/player-sidebar"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 export default function PlayerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
+    <ProtectedRoute allowedRoles={['player']}>
+      <SidebarProvider>
       <PlayerSidebar />
       <main className="w-full flex-1 bg-white text-gray-900">
         <div className="h-16 px-6 border-b border-gray-200 bg-white flex items-center gap-4 sticky top-0 z-10">
@@ -15,5 +17,6 @@ export default function PlayerLayout({ children }: { children: React.ReactNode }
         </div>
       </main>
     </SidebarProvider>
+    </ProtectedRoute>
   )
 }
