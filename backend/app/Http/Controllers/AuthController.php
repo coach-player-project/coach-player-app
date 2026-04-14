@@ -90,4 +90,25 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Terminate user session and revoke token.
+     */
+    public function logout(Request $request)
+    {
+        try {
+            // Delete current token associated with request
+            $request->user()->currentAccessToken()->delete();
+
+            return response()->json([
+                'message' => 'Wylogowano pomyślnie i zamknięto sesję.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Wystąpił błąd podczas wylogowania.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

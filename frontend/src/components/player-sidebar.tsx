@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
+import { LogoutButton } from "./logout-button"
 
 const items = [
   {
@@ -72,6 +73,7 @@ export function PlayerSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <LogoutButton />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
