@@ -55,9 +55,12 @@ export default function LoginPage() {
         throw new Error(data.message || "Wystąpił błąd podczas logowania.");
       }
 
-      // Explicitly store the bearer token
+      // Explicitly store the bearer token and refresh token
       if (data.token) {
         localStorage.setItem("auth_token", data.token);
+      }
+      if (data.refresh_token) {
+        localStorage.setItem("refresh_token", data.refresh_token);
       }
 
       setSuccess(true);

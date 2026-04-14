@@ -27,8 +27,9 @@ export function LogoutButton() {
     } catch (error) {
       console.error("Wystąpił błąd podczas próby wylogowania:", error)
     } finally {
-      // Zawsze wyczyść lokalną sesję i wracaj na '/login'
+      // Zawsze wyczyść lokalną sesję (access + refresh) i wracaj na '/login'
       localStorage.removeItem("auth_token")
+      localStorage.removeItem("refresh_token")
       router.push("/login")
     }
   }
