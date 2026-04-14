@@ -72,4 +72,28 @@ class User extends Authenticatable
             'password_hash' => 'hashed',
         ];
     }
+
+    /**
+     * Helper to verify if user is an Administrator
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Helper to verify if user is a Coach
+     */
+    public function isCoach(): bool
+    {
+        return $this->role === 'coach';
+    }
+
+    /**
+     * Helper to verify if user is a Player
+     */
+    public function isPlayer(): bool
+    {
+        return $this->role === 'player';
+    }
 }
