@@ -48,4 +48,46 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Authenticate user and issue token.
+     */
+    public function login(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'email' => ['required', 'string', 'email'],
+                'password' => ['required', 'string'],
+            ]);
+
+            $user = User::where('email', $validatedData['email'])->first();
+
+            if (!$user || !Hash::check($validatedData['password'], $user->password_hash)) {
+                return response()->json([
+                    'message' => 'Podano nieprawidłowy adres e-mail lub hasło.'
+                ], 401);
+            }
+
+            // Create Sanctum Token
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Pomyślnie zalogowano.',
+                'user' => $user,
+                'token' => $token,
+                'token_type' => 'Bearer'
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Błąd walidacji danych.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Wystąpił błąd podczas logowania.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
