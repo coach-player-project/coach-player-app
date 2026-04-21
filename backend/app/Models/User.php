@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids;
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password_hash',
+        'role',
         'phone',
         'avatar_url',
     ];
@@ -69,5 +71,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password_hash' => 'hashed',
         ];
+    }
+
+    /**
+     * Helper to verify if user is an Administrator
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Helper to verify if user is a Coach
+     */
+    public function isCoach(): bool
+    {
+        return $this->role === 'coach';
+    }
+
+    /**
+     * Helper to verify if user is a Player
+     */
+    public function isPlayer(): bool
+    {
+        return $this->role === 'player';
     }
 }
