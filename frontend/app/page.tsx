@@ -1,8 +1,33 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const role = localStorage.getItem("user_role");
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    if (role === "admin") router.replace("/pages/admin");
+    else if (role === "coach") router.replace("/pages/coach");
+    else if (role === "player") router.replace("/pages/player");
+    else router.replace("/login");
+  }, [router]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-8">Football Team Manager</h1>
-      <p className="text-xl">Witaj w aplikacji – zaloguj się aby kontynuować</p>
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-green-600" />
+        <p className="text-gray-500 font-medium">Przekierowywanie...</p>
+      </div>
+    </div>
   );
 }
