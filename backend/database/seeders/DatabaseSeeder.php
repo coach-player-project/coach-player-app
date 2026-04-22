@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 3. Create Team
+        // 3. Create Teams
         $teamId = Str::uuid()->toString();
         DB::table('teams')->insert([
             'id' => $teamId,
@@ -54,6 +54,24 @@ class DatabaseSeeder extends Seeder
             'coach_id' => $coachId,
             'created_at' => now()->subDays(30),
         ]);
+
+        $teamNames = [
+            'Orły Warszawa', 'Polonia Kraków', 'Wisła Poznań', 'Warta Gdańsk', 'Lech Wrocław',
+            'Cracovia Łódź', 'Śląsk Gdynia', 'Pogoń Katowice', 'Górnik Toruń', 'Sparta Bydgoszcz',
+            'Odra Opole', 'Miedź Legnica', 'Arka Lublin', 'Zawisza Białystok', 'Stal Rzeszów',
+            'Widzew Częstochowa', 'Motor Radom', 'Raków Kielce', 'Korona Olsztyn', 'Piast Gliwice',
+            'Sandecja Nowy Sącz', 'GKS Tychy', 'Zagłębie Sosnowiec', 'Podbeskidzie Bielsko', 'Chojniczanka'
+        ];
+
+        foreach ($teamNames as $index => $name) {
+            DB::table('teams')->insert([
+                'id' => Str::uuid()->toString(),
+                'name' => $name,
+                'description' => 'Przykładowa drużyna wygenerowana dla potrzeb testowania paginacji i sortowania SFP.',
+                'coach_id' => $coachId,
+                'created_at' => now()->subDays(rand(1, 100)),
+            ]);
+        }
 
         // 4. Assign Players to Team
         foreach ($playerIds as $playerId) {
