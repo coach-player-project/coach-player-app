@@ -12,7 +12,7 @@ export default function RegisterPage() {
     last_name: "",
     email: "",
     password: "",
-    role: "zawodnik",
+    role: "player",
   });
   
   const [loading, setLoading] = useState(false);
@@ -70,7 +70,7 @@ export default function RegisterPage() {
         last_name: "",
         email: "",
         password: "",
-        role: "zawodnik",
+        role: "player",
       });
       
     } catch (err: any) {
@@ -194,12 +194,12 @@ export default function RegisterPage() {
           <div className="space-y-2 pt-2">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider pl-1">Rola</label>
             <div className="grid grid-cols-2 gap-3">
-              <label className={`cursor-pointer border-2 rounded-xl p-3 text-center transition-all flex items-center justify-center ${formData.role === 'zawodnik' ? 'border-blue-500 bg-blue-500/10 text-white scale-100 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                <input type="radio" name="role" value="zawodnik" checked={formData.role === 'zawodnik'} onChange={handleChange} className="sr-only" />
+              <label className={`cursor-pointer border-2 rounded-xl p-3 text-center transition-all flex items-center justify-center ${formData.role === 'player' ? 'border-blue-500 bg-blue-500/10 text-white scale-100 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                <input type="radio" name="role" value="player" checked={formData.role === 'player'} onChange={handleChange} className="sr-only" />
                 <span className="font-medium text-sm">Zawodnik</span>
               </label>
-              <label className={`cursor-pointer border-2 rounded-xl p-3 text-center transition-all flex items-center justify-center ${formData.role === 'trener' ? 'border-emerald-500 bg-emerald-500/10 text-white scale-100 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                <input type="radio" name="role" value="trener" checked={formData.role === 'trener'} onChange={handleChange} className="sr-only" />
+              <label className={`cursor-pointer border-2 rounded-xl p-3 text-center transition-all flex items-center justify-center ${formData.role === 'coach' ? 'border-emerald-500 bg-emerald-500/10 text-white scale-100 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                <input type="radio" name="role" value="coach" checked={formData.role === 'coach'} onChange={handleChange} className="sr-only" />
                 <span className="font-medium text-sm">Trener</span>
               </label>
             </div>

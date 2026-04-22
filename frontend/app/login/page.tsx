@@ -67,10 +67,14 @@ export default function LoginPage() {
       }
 
       setSuccess(true);
-      
-      // Auto redirect to dashboard index or root after 1.5 seconds
+
+      // Przekierowanie do panelu odpowiedniego dla roli użytkownika
+      const role = data.user?.role;
       setTimeout(() => {
-        router.push("/"); 
+        if (role === "admin") router.push("/pages/admin");
+        else if (role === "coach") router.push("/pages/coach");
+        else if (role === "player") router.push("/pages/player");
+        else router.push("/");
       }, 1500);
       
     } catch (err: any) {
