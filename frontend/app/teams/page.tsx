@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  UserCircle2, 
-  ShieldAlert, 
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  UserCircle2,
+  ShieldAlert,
   Trophy,
   ArrowDownAZ,
   CalendarDays
@@ -67,12 +67,12 @@ export default function TeamsPage() {
           sort_by: sortBy,
           sort_dir: sortDir,
           page: page.toString(),
-          per_page: "9", 
+          per_page: "9",
         });
 
         const res = await apiFetch(`/teams?${queryParams.toString()}`);
         setTeams(res.data || []);
-        
+
         // Laravel's paginated response provides keys like current_page directly in root or meta object
         if (typeof res.current_page !== "undefined") {
           setMeta({
@@ -102,7 +102,7 @@ export default function TeamsPage() {
         {/* Header Section */}
         <header className="text-center space-y-6">
           <Badge variant="outline" className="px-4 py-1 border-indigo-500/30 text-indigo-400 bg-indigo-500/10 backdrop-blur-md">
-            Wyszukiwarka Drużyn SFP
+            Wyszukiwarka Drużyn
           </Badge>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
             Poznaj Najlepsze <br />
@@ -111,8 +111,7 @@ export default function TeamsPage() {
             </span>
           </h1>
           <p className="max-w-2xl mx-auto text-lg text-slate-400 leading-relaxed">
-            Przeglądaj, sortuj i wyszukuj drużyny w czasie rzeczywistym. 
-            Napędzane potężnym Server-Side Rendering z paginacją.
+            Przeglądaj, sortuj i wyszukuj drużyny w czasie rzeczywistym.
           </p>
         </header>
 
@@ -120,17 +119,17 @@ export default function TeamsPage() {
         <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <Input 
+            <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Szukaj po nazwie lub opisie..." 
+              placeholder="Szukaj po nazwie lub opisie..."
               className="pl-12 h-12 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500/50 rounded-xl"
             />
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <select 
+              <select
                 value={sortBy}
                 onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
                 className="appearance-none h-12 px-4 pr-10 bg-white/5 border border-white/10 text-white rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer"
@@ -179,8 +178,8 @@ export default function TeamsPage() {
               </div>
               <h3 className="text-2xl font-semibold">Nie znaleziono drużyn</h3>
               <p className="text-slate-400 max-w-md">Spróbuj zmienić parametry wyszukiwania, aby zobaczyć inne wyniki bazy danych.</p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="border-white/10 bg-white/5 hover:bg-white/10"
                 onClick={() => { setSearch(''); setDebouncedSearch(''); }}
               >
@@ -190,12 +189,12 @@ export default function TeamsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {teams.map((team) => (
-                <div 
+                <div
                   key={team.id}
                   className="group relative p-6 rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(99,102,241,0.12)] overflow-hidden flex flex-col"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] group-hover:bg-indigo-400/20 transition-all duration-500" />
-                  
+
                   <div className="relative flex items-center gap-4 mb-6">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-inner">
                       <Trophy className="w-6 h-6 text-white" />
@@ -235,7 +234,7 @@ export default function TeamsPage() {
         {!loading && meta && meta.total > 0 && (
           <div className="flex flex-col items-center justify-center pt-8 border-t border-white/10 space-y-4">
             <p className="text-sm text-slate-400">
-              Strona <span className="text-white font-medium">{meta.current_page}</span> z <span className="text-white font-medium">{meta.last_page}</span> 
+              Strona <span className="text-white font-medium">{meta.current_page}</span> z <span className="text-white font-medium">{meta.last_page}</span>
               {" "}({meta.total} wyników)
             </p>
             <div className="flex items-center gap-2">

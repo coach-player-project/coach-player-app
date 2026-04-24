@@ -10,39 +10,38 @@
         }
     ],
     "paths": {
-        "/api/user": {
+        "/api/admin/users/{id}/role": {
             "put": {
-                "tags": [
-                    "Me"
+                "summary": "Zmień rolę użytkownika",
+                "description": "Pozwala administratorowi zmienić rolę dowolnego użytkownika (admin, coach, player)",
+                "operationId": "a91dbccd21e1f5568d5713910140f31e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID użytkownika",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
                 ],
-                "summary": "Update current user profile",
-                "operationId": "meUpdate",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "application/x-www-form-urlencoded": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "email"
+                                    "role"
                                 ],
                                 "properties": {
-                                    "name": {
+                                    "role": {
                                         "type": "string",
-                                        "example": "Jan Kowalski",
-                                        "maxLength": 255
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "jan@example.com",
-                                        "maxLength": 255
-                                    },
-                                    "password": {
-                                        "type": "string",
-                                        "example": "secret1234",
-                                        "nullable": true,
-                                        "minLength": 8
+                                        "enum": [
+                                            "admin",
+                                            "coach",
+                                            "player"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -52,35 +51,289 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Updated user",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "name": {
-                                            "type": "string",
-                                            "example": "Jan Kowalski"
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "format": "email",
-                                            "example": "jan@example.com"
-                                        }
+                        "description": "Rola pomyślnie zmieniona"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono użytkownika"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "summary": "Rejestracja użytkownika",
+                "description": "Rejestruje nowego użytkownika w systemie",
+                "operationId": "d764dd091cc4494ae0baf360b03319f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
                                     },
-                                    "type": "object"
-                                }
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 8
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "coach",
+                                            "player"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Użytkownik zarejestrowany pomyślnie"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Błąd walidacji danych"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "summary": "Logowanie użytkownika",
+                "description": "Authenticate user and issue token.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "responses": {
+                    "200": {
+                        "description": "Pomyślnie zalogowano"
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "summary": "Wylogowanie użytkownika",
+                "description": "Zamyka sesję użytkownika i unieważnia token dostępu",
+                "operationId": "69281b12abb272c76871f19cb17ca563",
+                "responses": {
+                    "200": {
+                        "description": "Wylogowano pomyślnie"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "summary": "Odśwież token dostępu",
+                "description": "Odświeża token dostępu przy użyciu refresh tokena",
+                "operationId": "b2eae7a8032954d25b46c7ec6f489c68",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "refresh_token"
+                                ],
+                                "properties": {
+                                    "refresh_token": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tokeny pomyślnie odświeżone"
+                    },
+                    "401": {
+                        "description": "Token odświeżania jest nieważny lub wygasł"
+                    }
+                }
+            }
+        },
+        "/api/teams": {
+            "get": {
+                "summary": "Pobierz listę drużyn",
+                "description": "Pobiera listę drużyn z obsługą paginacji, sortowania i wyszukiwania.",
+                "operationId": "fc1c5dd9ef530faf6e8bba930cad296c",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Szukana fraza",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sortowanie wg pola",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Kierunek sortowania (asc/desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Ilość wyników na stronę",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista drużyn pomyślnie pobrana"
+                    }
+                }
+            }
+        },
+        "/api/user": {
+            "get": {
+                "summary": "Pobierz dane zalogowanego użytkownika",
+                "operationId": "cfd983978b0e5d145c0e227bb4ef3c6b",
+                "responses": {
+                    "200": {
+                        "description": "Dane użytkownika"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Aktualizacja profilu",
+                "description": "Aktualizuje profil obecnie zalogowanego użytkownika",
+                "operationId": "ecb404a4d0983f2672c859b835dc33e6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil zaaktualizowany"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/dashboard": {
+            "get": {
+                "summary": "Panel administratora",
+                "operationId": "ea0e1284dd90c3629f4a0400d998cd04",
+                "responses": {
+                    "200": {
+                        "description": "Wiadomość z panelu admina"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/coach/dashboard": {
+            "get": {
+                "summary": "Panel trenera",
+                "operationId": "6997a7f0751635b6ae9d8c02b637b8f1",
+                "responses": {
+                    "200": {
+                        "description": "Wiadomość z panelu trenera"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/dashboard": {
+            "get": {
+                "summary": "Panel zawodnika",
+                "operationId": "4ba12f290297307a55d0baab9d244700",
+                "responses": {
+                    "200": {
+                        "description": "Wiadomość z panelu zawodnika"
                     }
                 },
                 "security": [
@@ -101,12 +354,6 @@
             }
         }
     },
-    "tags": [
-        {
-            "name": "Me",
-            "description": "Me"
-        }
-    ],
     "security": [
         {
             "sanctum": []

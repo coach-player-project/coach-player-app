@@ -4,12 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class TeamController extends Controller
 {
     /**
      * Display a listing of the teams for unauthenticated users with SFP support.
      */
+    #[OA\Get(
+        path: '/api/teams',
+        summary: 'Pobierz listę drużyn',
+        description: 'Pobiera listę drużyn z obsługą paginacji, sortowania i wyszukiwania.',
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', description: 'Szukana fraza', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'sort_by', in: 'query', description: 'Sortowanie wg pola', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
+            new OA\Parameter(name: 'sort_dir', in: 'query', description: 'Kierunek sortowania (asc/desc)', required: false, schema: new OA\Schema(type: 'string', default: 'desc')),
+            new OA\Parameter(name: 'per_page', in: 'query', description: 'Ilość wyników na stronę', required: false, schema: new OA\Schema(type: 'integer', default: 10))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista drużyn pomyślnie pobrana')
+        ]
+    )]
     public function index(Request $request)
     {
         $query = Team::query();
