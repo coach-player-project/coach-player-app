@@ -38,7 +38,7 @@ class UserController extends Controller
     )]
     public function updateProfile(Request $request)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user();
 
         $validatedData = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
