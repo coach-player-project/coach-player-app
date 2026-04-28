@@ -5,12 +5,37 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use OpenApi\Attributes as OA;
 
 class UserController extends Controller
 {
     /**
      * Update the authenticated user's profile settings.
      */
+    #[OA\Put(
+        path: '/api/user',
+        summary: 'Aktualizacja profilu',
+        description: 'Aktualizuje profil obecnie zalogowanego użytkownika',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    required: ['first_name', 'last_name'],
+                    properties: [
+                        new OA\Property(property: 'first_name', type: 'string'),
+                        new OA\Property(property: 'last_name', type: 'string'),
+                        new OA\Property(property: 'phone', type: 'string', nullable: true),
+                        new OA\Property(property: 'password', type: 'string', nullable: true)
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Profil zaaktualizowany')
+        ]
+    )]
     public function updateProfile(Request $request)
     {
         $user = $request->user();

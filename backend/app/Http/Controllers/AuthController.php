@@ -6,12 +6,38 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
     /**
      * Register a new user.
      */
+    #[OA\Post(
+        path: '/api/auth/register',
+        summary: 'Rejestracja użytkownika',
+        description: 'Rejestruje nowego użytkownika w systemie',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    required: ['first_name', 'last_name', 'email', 'password', 'role'],
+                    properties: [
+                        new OA\Property(property: 'first_name', type: 'string'),
+                        new OA\Property(property: 'last_name', type: 'string'),
+                        new OA\Property(property: 'email', type: 'string', format: 'email'),
+                        new OA\Property(property: 'password', type: 'string', minLength: 8),
+                        new OA\Property(property: 'role', type: 'string', enum: ['coach', 'player'])
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Użytkownik zarejestrowany pomyślnie'),
+            new OA\Response(response: 422, description: 'Błąd walidacji danych')
+        ]
+    )]
     public function register(Request $request)
     {
         try {
@@ -52,6 +78,13 @@ class AuthController extends Controller
     /**
      * Authenticate user and issue token.
      */
+    #[OA\Post(
+        path: '/api/login',
+        summary: 'Logowanie użytkownika',
+        responses: [
+            new OA\Response(response: 200, description: 'Pomyślnie zalogowano')
+        ]
+    )]
     public function login(Request $request)
     {
         try {
@@ -106,6 +139,15 @@ class AuthController extends Controller
     /**
      * Terminate user session and revoke current token.
      */
+    #[OA\Post(
+        path: '/api/auth/logout',
+        summary: 'Wylogowanie użytkownika',
+        description: 'Zamyka sesję użytkownika i unieważnia token dostępu',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wylogowano pomyślnie')
+        ]
+    )]
     public function logout(Request $request)
     {
         try {
@@ -129,6 +171,27 @@ class AuthController extends Controller
     /**
      * Refresh access and refresh tokens.
      */
+    #[OA\Post(
+        path: '/api/auth/refresh',
+        summary: 'Odśwież token dostępu',
+        description: 'Odświeża token dostępu przy użyciu refresh tokena',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    required: ['refresh_token'],
+                    properties: [
+                        new OA\Property(property: 'refresh_token', type: 'string')
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Tokeny pomyślnie odświeżone'),
+            new OA\Response(response: 401, description: 'Token odświeżania jest nieważny lub wygasł')
+        ]
+    )]
     public function refresh(Request $request)
     {
         try {
