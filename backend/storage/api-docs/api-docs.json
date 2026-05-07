@@ -516,6 +516,276 @@
                 }
             }
         },
+        "/api/admin/teams": {
+            "get": {
+                "summary": "Lista drużyn (admin)",
+                "description": "Pobiera listę drużyn dla panelu administratora z obsługą paginacji, sortowania i wyszukiwania.",
+                "operationId": "31e1b3b863d434d307eb20381d3fe434",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Szukana fraza",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sortowanie wg pola",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Kierunek sortowania (asc/desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Ilość wyników na stronę",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numer strony",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista drużyn pomyślnie pobrana"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Utwórz nową drużynę",
+                "description": "Tworzy nową drużynę i przypisuje do niej trenera.",
+                "operationId": "7f900339c540070028deb23c02c4b236",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "coach_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "coach_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Drużyna została utworzona"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    },
+                    "422": {
+                        "description": "Błąd walidacji danych"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/teams/{id}": {
+            "get": {
+                "summary": "Pobierz szczegóły drużyny",
+                "description": "Zwraca pojedynczą drużynę wraz z przypisanym trenerem.",
+                "operationId": "87daf5a916f5df20f858ee78bdda3f07",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID drużyny (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Szczegóły drużyny pobrane pomyślnie"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono drużyny"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Zaktualizuj drużynę",
+                "description": "Aktualizuje dane drużyny i opcjonalnie przypisanego trenera.",
+                "operationId": "e274360882edaa8e4d37800582965dd9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID drużyny (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 255
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "coach_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Drużyna została zaktualizowana"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono drużyny"
+                    },
+                    "422": {
+                        "description": "Błąd walidacji danych"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Usuń drużynę",
+                "description": "Usuwa drużynę na podstawie jej ID.",
+                "operationId": "db29fb6c4d17d8c0c67f13c04e984261",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID drużyny (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Drużyna została usunięta"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono drużyny"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/teams/coaches": {
+            "get": {
+                "summary": "Lista trenerów do przypisania",
+                "description": "Zwraca listę użytkowników z rolą coach do przypisania w drużynie.",
+                "operationId": "311f9faf32f21585f5230993aa907d08",
+                "responses": {
+                    "200": {
+                        "description": "Lista trenerów pobrana pomyślnie"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/user": {
             "get": {
                 "summary": "Pobierz dane zalogowanego użytkownika",
