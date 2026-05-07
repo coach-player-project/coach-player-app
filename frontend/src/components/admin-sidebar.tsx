@@ -1,6 +1,6 @@
 "use client"
 
-import { Users, Settings, LayoutDashboard, CalendarDays } from "lucide-react"
+import { Users, Settings, LayoutDashboard, CalendarDays, Shield } from "lucide-react"
 
 import {
   Sidebar,
@@ -30,6 +30,11 @@ const items = [
     title: "Wydarzenia",
     url: "/pages/admin/events",
     icon: CalendarDays,
+  },
+  {
+    title: "Drużyny",
+    url: "/pages/admin/teams",
+    icon: Shield,
   },
   {
     title: "Moje dane",

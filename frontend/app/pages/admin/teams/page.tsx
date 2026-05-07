@@ -1,0 +1,371 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+type CoachOption = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+};
+
+type TeamItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  coach_id: string;
+  created_at: string;
+  coach?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+};
+
+type TeamsResponse = {
+  data: TeamItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+};
+
+type TeamFormState = {
+  name: string;
+  description: string;
+  coach_id: string;
+};
+
+const initialForm: TeamFormState = {
+  name: "",
+  description: "",
+  coach_id: "",
+};
+
+function fullCoachName(coach?: TeamItem["coach"]) {
+  if (!coach) return "Brak przypisanego";
+  return `${coach.first_name} ${coach.last_name}`;
+}
+
+export default function AdminTeamsPage() {
+  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [coaches, setCoaches] = useState<CoachOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [coachesLoading, setCoachesLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [meta, setMeta] = useState({
+    total: 0,
+    per_page: 10,
+    current_page: 1,
+    last_page: 1,
+  });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<TeamFormState>(initialForm);
+
+  const isEditing = Boolean(editingId);
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("per_page", String(perPage));
+    params.set("sort_by", "created_at");
+    params.set("sort_dir", "desc");
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+    return params.toString();
+  }, [page, perPage, search]);
+
+  async function loadTeams() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = (await apiFetch(`/admin/teams?${queryString}`)) as TeamsResponse;
+      setTeams(res.data ?? []);
+      setMeta({
+        total: res.total ?? 0,
+        per_page: res.per_page ?? perPage,
+        current_page: res.current_page ?? page,
+        last_page: res.last_page ?? 1,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się pobrać drużyn.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadCoaches() {
+    setCoachesLoading(true);
+    try {
+      const res = (await apiFetch("/admin/teams/coaches")) as { data?: CoachOption[] };
+      const coachData = res.data ?? [];
+      setCoaches(coachData);
+
+      setForm((prev) => {
+        if (prev.coach_id || coachData.length === 0) {
+          return prev;
+        }
+        return { ...prev, coach_id: coachData[0].id };
+      });
+    } catch {
+      setCoaches([]);
+    } finally {
+      setCoachesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadTeams();
+  }, [queryString]);
+
+  useEffect(() => {
+    void loadCoaches();
+  }, []);
+
+  function resetForm() {
+    setForm({
+      ...initialForm,
+      coach_id: coaches[0]?.id ?? "",
+    });
+    setEditingId(null);
+  }
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      coach_id: form.coach_id.trim(),
+    };
+
+    try {
+      if (isEditing && editingId) {
+        await apiFetch(`/admin/teams/${editingId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        setMessage("Drużyna została zaktualizowana.");
+      } else {
+        await apiFetch("/admin/teams", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        setMessage("Drużyna została utworzona.");
+      }
+      resetForm();
+      await loadTeams();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się zapisać drużyny.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function onEdit(team: TeamItem) {
+    setEditingId(team.id);
+    setForm({
+      name: team.name ?? "",
+      description: team.description ?? "",
+      coach_id: team.coach_id ?? "",
+    });
+    setMessage(null);
+    setError(null);
+  }
+
+  async function onDelete(id: string) {
+    const ok = window.confirm("Na pewno usunąć drużynę?");
+    if (!ok) return;
+
+    setError(null);
+    setMessage(null);
+    try {
+      await apiFetch(`/admin/teams/${id}`, { method: "DELETE" });
+      if (editingId === id) {
+        resetForm();
+      }
+      setMessage("Drużyna została usunięta.");
+      await loadTeams();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się usunąć drużyny.");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <h1 className="text-2xl font-bold tracking-tight text-black">Zarządzanie drużynami</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Tworzenie, edycja i usuwanie drużyn w systemie.
+        </p>
+
+        <form onSubmit={onSubmit} className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Input
+            placeholder="Nazwa drużyny"
+            value={form.name}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            required
+          />
+          <select
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+            value={form.coach_id}
+            onChange={(e) => setForm((prev) => ({ ...prev, coach_id: e.target.value }))}
+            required
+            disabled={coachesLoading || coaches.length === 0}
+          >
+            {coaches.length === 0 ? (
+              <option value="">{coachesLoading ? "Ładowanie trenerów..." : "Brak trenerów"}</option>
+            ) : (
+              coaches.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.first_name} {coach.last_name} ({coach.email})
+                </option>
+              ))
+            )}
+          </select>
+          <textarea
+            className="md:col-span-2 min-h-24 rounded-lg border border-input px-2.5 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            placeholder="Opis (opcjonalnie)"
+            value={form.description}
+            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+          />
+
+          <div className="md:col-span-2 flex gap-2">
+            <Button type="submit" disabled={submitting || coaches.length === 0}>
+              {submitting ? "Zapisywanie..." : isEditing ? "Zapisz zmiany" : "Dodaj drużynę"}
+            </Button>
+            {isEditing && (
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Anuluj edycję
+              </Button>
+            )}
+          </div>
+        </form>
+
+        {message && <p className="mt-3 text-sm text-green-700">{message}</p>}
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      </div>
+
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:justify-between mb-4">
+          <Input
+            placeholder="Szukaj po nazwie lub opisie..."
+            value={search}
+            onChange={(e) => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
+            className="md:max-w-md"
+          />
+          <div className="flex items-center gap-2 text-sm">
+            <span>Na stronę:</span>
+            <select
+              className="h-8 rounded-lg border border-input px-2"
+              value={perPage}
+              onChange={(e) => {
+                setPage(1);
+                setPerPage(Number(e.target.value));
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+            </select>
+          </div>
+        </div>
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nazwa</TableHead>
+              <TableHead>Trener</TableHead>
+              <TableHead>Opis</TableHead>
+              <TableHead>Utworzono</TableHead>
+              <TableHead className="text-right">Akcje</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5}>Ładowanie...</TableCell>
+              </TableRow>
+            ) : teams.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5}>Brak drużyn.</TableCell>
+              </TableRow>
+            ) : (
+              teams.map((team) => (
+                <TableRow key={team.id}>
+                  <TableCell className="font-medium">{team.name}</TableCell>
+                  <TableCell>{fullCoachName(team.coach)}</TableCell>
+                  <TableCell>{team.description || "-"}</TableCell>
+                  <TableCell>{new Date(team.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+                      onClick={() => onEdit(team)}
+                    >
+                      Edytuj
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => onDelete(team.id)}>
+                      Usuń
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <span>
+            Strona {meta.current_page} z {meta.last_page} (łącznie: {meta.total})
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={meta.current_page <= 1 || loading}
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            >
+              Poprzednia
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={meta.current_page >= meta.last_page || loading}
+              onClick={() => setPage((prev) => prev + 1)}
+            >
+              Następna
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
