@@ -37,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'show']);
         Route::put('/events/{id}', [EventController::class, 'update']);
         Route::delete('/events/{id}', [EventController::class, 'destroy']);
+        Route::get('/teams/coaches', [TeamController::class, 'coaches']);
+        Route::get('/teams', [TeamController::class, 'adminIndex']);
+        Route::post('/teams', [TeamController::class, 'store']);
+        Route::get('/teams/{id}', [TeamController::class, 'show']);
+        Route::put('/teams/{id}', [TeamController::class, 'update']);
+        Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
     });
 
 

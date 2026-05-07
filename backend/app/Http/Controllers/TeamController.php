@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
@@ -60,5 +61,122 @@ class TeamController extends Controller
         $teams = $query->paginate($perPage);
 
         return response()->json($teams);
+    }
+
+    /**
+     * Display listing of teams for admin panel.
+     */
+    public function adminIndex(Request $request)
+    {
+        return $this->index($request);
+    }
+
+    /**
+     * Store a newly created team.
+     */
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'coach_id' => ['required', 'uuid', 'exists:users,id'],
+        ]);
+
+        $coach = User::query()
+            ->where('id', $validatedData['coach_id'])
+            ->where('role', 'coach')
+            ->first();
+
+        if (!$coach) {
+            return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
+        }
+
+        $team = Team::query()->create($validatedData);
+        $team->load(['coach:id,first_name,last_name,email']);
+
+        return response()->json([
+            'message' => 'Team created successfully.',
+            'team' => $team,
+        ], 201);
+    }
+
+    /**
+     * Display the specified team.
+     */
+    public function show(string $id)
+    {
+        $team = Team::query()
+            ->with(['coach:id,first_name,last_name,email'])
+            ->find($id);
+
+        if (!$team) {
+            return response()->json(['message' => 'Team not found.'], 404);
+        }
+
+        return response()->json(['team' => $team], 200);
+    }
+
+    /**
+     * Update the specified team.
+     */
+    public function update(Request $request, string $id)
+    {
+        $team = Team::query()->find($id);
+        if (!$team) {
+            return response()->json(['message' => 'Team not found.'], 404);
+        }
+
+        $validatedData = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'coach_id' => ['sometimes', 'required', 'uuid', 'exists:users,id'],
+        ]);
+
+        if (array_key_exists('coach_id', $validatedData)) {
+            $coach = User::query()
+                ->where('id', $validatedData['coach_id'])
+                ->where('role', 'coach')
+                ->first();
+
+            if (!$coach) {
+                return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
+            }
+        }
+
+        $team->update($validatedData);
+        $team->load(['coach:id,first_name,last_name,email']);
+
+        return response()->json([
+            'message' => 'Team updated successfully.',
+            'team' => $team,
+        ], 200);
+    }
+
+    /**
+     * Remove the specified team.
+     */
+    public function destroy(string $id)
+    {
+        $deleted = Team::query()->where('id', $id)->delete();
+        if ($deleted === 0) {
+            return response()->json(['message' => 'Team not found.'], 404);
+        }
+
+        return response()->json(['message' => 'Team deleted successfully.'], 200);
+    }
+
+    /**
+     * Return available coaches for team assignment.
+     */
+    public function coaches()
+    {
+        $coaches = User::query()
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->where('role', 'coach')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        return response()->json(['data' => $coaches], 200);
     }
 }
