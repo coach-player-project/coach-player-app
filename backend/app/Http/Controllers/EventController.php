@@ -5,12 +5,27 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class EventController extends Controller
 {
-    /**
-     * List events (training sessions) with optional filtering/sorting.
-     */
+    #[OA\Get(
+        path: '/api/admin/events',
+        summary: 'Lista wydarzeń (treningów)',
+        description: 'Zwraca listę wydarzeń (trening sessions) z możliwością filtrowania, sortowania i paginacji.',
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', description: 'Fraza wyszukiwania po tytule, opisie lub nazwie drużyny', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'team_id', in: 'query', description: 'ID drużyny (UUID) do filtrowania wydarzeń', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'sort_by', in: 'query', description: 'Kolumna sortowania (scheduled_at, created_at, duration_minutes, title)', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
+            new OA\Parameter(name: 'sort_dir', in: 'query', description: 'Kierunek sortowania (asc/desc)', required: false, schema: new OA\Schema(type: 'string', default: 'desc')),
+            new OA\Parameter(name: 'per_page', in: 'query', description: 'Liczba wyników na stronę', required: false, schema: new OA\Schema(type: 'integer', default: 10)),
+            new OA\Parameter(name: 'page', in: 'query', description: 'Numer strony', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista wydarzeń została pobrana pomyślnie'),
+        ]
+    )]
     public function index(Request $request)
     {
         $perPage = (int) $request->input('per_page', 10);
@@ -83,9 +98,35 @@ class EventController extends Controller
         ], 200);
     }
 
-    /**
-     * Create a new event (training session).
-     */
+    #[OA\Post(
+        path: '/api/admin/events',
+        summary: 'Utwórz nowe wydarzenie (trening)',
+        description: 'Tworzy nowe wydarzenie treningowe powiązane z drużyną.',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    required: ['team_id', 'title', 'scheduled_at', 'duration_minutes'],
+                    properties: [
+                        new OA\Property(property: 'team_id', type: 'string', format: 'uuid'),
+                        new OA\Property(property: 'title', type: 'string'),
+                        new OA\Property(property: 'description', type: 'string', nullable: true),
+                        new OA\Property(property: 'scheduled_at', type: 'string', format: 'date-time'),
+                        new OA\Property(property: 'duration_minutes', type: 'integer', minimum: 1),
+                        new OA\Property(property: 'canvas_data', type: 'string', nullable: true),
+                        new OA\Property(property: 'google_event_id', type: 'string', nullable: true),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Wydarzenie zostało utworzone pomyślnie'),
+            new OA\Response(response: 401, description: 'Brak autoryzacji'),
+            new OA\Response(response: 422, description: 'Błąd walidacji danych'),
+        ]
+    )]
     public function store(Request $request)
     {
         $user = $request->user();
@@ -138,9 +179,25 @@ class EventController extends Controller
         ], 201);
     }
 
-    /**
-     * Get a single event (training session) by id.
-     */
+    #[OA\Get(
+        path: '/api/admin/events/{id}',
+        summary: 'Pobierz szczegóły wydarzenia',
+        description: 'Zwraca pojedyncze wydarzenie (trening) na podstawie jego ID.',
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID wydarzenia (UUID)',
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało pobrane pomyślnie'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+        ]
+    )]
     public function show($id)
     {
         $event = DB::table('training_sessions')
@@ -164,9 +221,43 @@ class EventController extends Controller
         return response()->json(['event' => $event], 200);
     }
 
-    /**
-     * Update an existing event (training session).
-     */
+    #[OA\Put(
+        path: '/api/admin/events/{id}',
+        summary: 'Zaktualizuj istniejące wydarzenie',
+        description: 'Aktualizuje podane pola wydarzenia (treningu).',
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID wydarzenia (UUID)',
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\MediaType(
+                mediaType: 'application/x-www-form-urlencoded',
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true),
+                        new OA\Property(property: 'title', type: 'string', nullable: true),
+                        new OA\Property(property: 'description', type: 'string', nullable: true),
+                        new OA\Property(property: 'scheduled_at', type: 'string', format: 'date-time', nullable: true),
+                        new OA\Property(property: 'duration_minutes', type: 'integer', minimum: 1, nullable: true),
+                        new OA\Property(property: 'canvas_data', type: 'string', nullable: true),
+                        new OA\Property(property: 'google_event_id', type: 'string', nullable: true),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało zaktualizowane pomyślnie'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+            new OA\Response(response: 422, description: 'Błąd walidacji danych'),
+        ]
+    )]
     public function update(Request $request, $id)
     {
         $exists = DB::table('training_sessions')->where('id', $id)->exists();
@@ -208,9 +299,25 @@ class EventController extends Controller
         ], 200);
     }
 
-    /**
-     * Delete an event (training session).
-     */
+    #[OA\Delete(
+        path: '/api/admin/events/{id}',
+        summary: 'Usuń wydarzenie',
+        description: 'Usuwa wydarzenie (trening) na podstawie ID.',
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID wydarzenia (UUID)',
+                schema: new OA\Schema(type: 'string', format: 'uuid')
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało usunięte pomyślnie'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+        ]
+    )]
     public function destroy($id)
     {
         $deleted = DB::table('training_sessions')->where('id', $id)->delete();
