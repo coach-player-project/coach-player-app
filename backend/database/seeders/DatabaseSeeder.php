@@ -12,7 +12,21 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Coach
+        // 1. Create Admin
+        $adminId = Str::uuid()->toString();
+        DB::table('users')->insert([
+            'id' => $adminId,
+            'email' => 'admin@example.com',
+            'password_hash' => Hash::make('password123'),
+            'first_name' => 'Adam',
+            'last_name' => 'Administrator',
+            'role' => 'admin',
+            'avatar_url' => 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 2. Create Coach
         $coachId = Str::uuid()->toString();
         DB::table('users')->insert([
             'id' => $coachId,
@@ -26,7 +40,7 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 2. Create Players
+        // 3. Create Players
         $playerIds = [];
         for ($i = 1; $i <= 11; $i++) {
             $playerId = Str::uuid()->toString();
@@ -45,7 +59,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 3. Create Teams
+        // 4. Create Teams
         $teamId = Str::uuid()->toString();
         DB::table('teams')->insert([
             'id' => $teamId,
@@ -73,7 +87,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 4. Assign Players to Team
+        // 5. Assign Players to Team
         foreach ($playerIds as $playerId) {
             DB::table('team_members')->insert([
                 'id' => Str::uuid()->toString(),
@@ -83,7 +97,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 5. Create Training Session
+        // 6. Create Training Session
         $trainingId = Str::uuid()->toString();
         DB::table('training_sessions')->insert([
             'id' => $trainingId,
@@ -98,7 +112,7 @@ class DatabaseSeeder extends Seeder
             'created_at' => now()->subDays(1),
         ]);
 
-        // 6. Create Training Exercises
+        // 7. Create Training Exercises
         $exercises = [
             ['name' => 'Rozgrzewka', 'description' => 'Bieganie dookoła boiska, rozciąganie'],
             ['name' => 'Dziadek', 'description' => 'Gra na utrzymanie 5 na 2'],
@@ -117,7 +131,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 7. Create past training for Attendance and Fatigue ratings
+        // 8. Create past training for Attendance and Fatigue ratings
         $pastTrainingId = Str::uuid()->toString();
         DB::table('training_sessions')->insert([
             'id' => $pastTrainingId,
@@ -132,7 +146,7 @@ class DatabaseSeeder extends Seeder
             'created_at' => now()->subDays(5),
         ]);
 
-        // 8. Add Attendance & Fatigue Ratings for past training
+        // 9. Add Attendance & Fatigue Ratings for past training
         foreach ($playerIds as $index => $playerId) {
             $attended = rand(0, 100) > 20; // 80% chance of attendance
             
@@ -156,7 +170,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // 9. Tactics
+        // 10. Tactics
         $tacticId = Str::uuid()->toString();
         DB::table('tactics')->insert([
             'id' => $tacticId,
@@ -170,7 +184,7 @@ class DatabaseSeeder extends Seeder
             'created_at' => now(),
         ]);
 
-        // 10. Tactic Players
+        // 11. Tactic Players
         foreach (array_slice($playerIds, 0, 11) as $index => $playerId) {
             DB::table('tactic_players')->insert([
                 'id' => Str::uuid()->toString(),
