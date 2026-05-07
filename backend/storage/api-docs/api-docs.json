@@ -181,6 +181,288 @@
                 }
             }
         },
+        "/api/admin/events": {
+            "get": {
+                "summary": "Lista wydarzeń (treningów)",
+                "description": "Zwraca listę wydarzeń (trening sessions) z możliwością filtrowania, sortowania i paginacji.",
+                "operationId": "e8981c1a47a6e199e04f6da9be99ace2",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Fraza wyszukiwania po tytule, opisie lub nazwie drużyny",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "team_id",
+                        "in": "query",
+                        "description": "ID drużyny (UUID) do filtrowania wydarzeń",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Kolumna sortowania (scheduled_at, created_at, duration_minutes, title)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Kierunek sortowania (asc/desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Liczba wyników na stronę",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numer strony",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista wydarzeń została pobrana pomyślnie"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Utwórz nowe wydarzenie (trening)",
+                "description": "Tworzy nowe wydarzenie treningowe powiązane z drużyną.",
+                "operationId": "34cf2e0bea9715aede6f05b201e6043f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "team_id",
+                                    "title",
+                                    "scheduled_at",
+                                    "duration_minutes"
+                                ],
+                                "properties": {
+                                    "team_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "scheduled_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "duration_minutes": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "canvas_data": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "google_event_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Wydarzenie zostało utworzone pomyślnie"
+                    },
+                    "401": {
+                        "description": "Brak autoryzacji"
+                    },
+                    "422": {
+                        "description": "Błąd walidacji danych"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/events/{id}": {
+            "get": {
+                "summary": "Pobierz szczegóły wydarzenia",
+                "description": "Zwraca pojedyncze wydarzenie (trening) na podstawie jego ID.",
+                "operationId": "cb68a54555b57e088d3f83da6231c212",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID wydarzenia (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wydarzenie zostało pobrane pomyślnie"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono wydarzenia"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Zaktualizuj istniejące wydarzenie",
+                "description": "Aktualizuje podane pola wydarzenia (treningu).",
+                "operationId": "0210d9841733fe957baf3353b314adce",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID wydarzenia (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "properties": {
+                                    "team_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "scheduled_at": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "duration_minutes": {
+                                        "type": "integer",
+                                        "nullable": true,
+                                        "minimum": 1
+                                    },
+                                    "canvas_data": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "google_event_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Wydarzenie zostało zaktualizowane pomyślnie"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono wydarzenia"
+                    },
+                    "422": {
+                        "description": "Błąd walidacji danych"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Usuń wydarzenie",
+                "description": "Usuwa wydarzenie (trening) na podstawie ID.",
+                "operationId": "1ea1fabf1d8b486bbbe5823a18af3319",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID wydarzenia (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wydarzenie zostało usunięte pomyślnie"
+                    },
+                    "404": {
+                        "description": "Nie znaleziono wydarzenia"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/teams": {
             "get": {
                 "summary": "Pobierz listę drużyn",
