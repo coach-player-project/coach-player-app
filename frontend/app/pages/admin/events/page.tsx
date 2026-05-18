@@ -13,9 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type EventType = "training" | "match";
+
 type EventItem = {
   id: string;
   team_id: string;
+  event_type: EventType;
   title: string;
   description: string | null;
   scheduled_at: string;
@@ -40,8 +43,14 @@ type EventsResponse = {
   };
 };
 
+const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  training: "Trening",
+  match: "Mecz",
+};
+
 type EventFormState = {
   team_id: string;
+  event_type: EventType;
   title: string;
   description: string;
   scheduled_at: string;
@@ -50,6 +59,7 @@ type EventFormState = {
 
 const initialForm: EventFormState = {
   team_id: "",
+  event_type: "training",
   title: "",
   description: "",
   scheduled_at: "",
@@ -154,6 +164,7 @@ export default function AdminEventsPage() {
 
     const payload = {
       team_id: form.team_id.trim(),
+      event_type: form.event_type,
       title: form.title.trim(),
       description: form.description.trim() || null,
       scheduled_at: toApiDatetime(form.scheduled_at),
@@ -187,6 +198,7 @@ export default function AdminEventsPage() {
     setEditingId(item.id);
     setForm({
       team_id: item.team_id ?? "",
+      event_type: item.event_type ?? "training",
       title: item.title ?? "",
       description: item.description ?? "",
       scheduled_at: toDatetimeLocal(item.scheduled_at),
@@ -219,7 +231,7 @@ export default function AdminEventsPage() {
       <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
         <h1 className="text-2xl font-bold tracking-tight text-black">Zarządzanie wydarzeniami</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Tworzenie i edycja wydarzeń treningowych dla drużyn.
+          Tworzenie i edycja treningów oraz meczów dla drużyn.
         </p>
 
         <form onSubmit={onSubmit} className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -238,6 +250,21 @@ export default function AdminEventsPage() {
                 {team.name}
               </option>
             ))}
+          </select>
+          <select
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            value={form.event_type}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                event_type: e.target.value as EventType,
+                duration_minutes: e.target.value === "match" ? "105" : "90",
+              }))
+            }
+            required
+          >
+            <option value="training">Trening</option>
+            <option value="match">Mecz</option>
           </select>
           <Input
             placeholder="Tytuł"
@@ -313,6 +340,7 @@ export default function AdminEventsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Typ</TableHead>
               <TableHead>Tytuł</TableHead>
               <TableHead>Drużyna</TableHead>
               <TableHead>Termin</TableHead>
@@ -323,15 +351,18 @@ export default function AdminEventsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5}>Ładowanie...</TableCell>
+                <TableCell colSpan={6}>Ładowanie...</TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}>Brak wydarzeń.</TableCell>
+                <TableCell colSpan={6}>Brak wydarzeń.</TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
                 <TableRow key={item.id}>
+                  <TableCell>
+                    {EVENT_TYPE_LABELS[item.event_type] ?? item.event_type}
+                  </TableCell>
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell>{item.team_name ?? item.team_id}</TableCell>
                   <TableCell>{new Date(item.scheduled_at).toLocaleString()}</TableCell>
