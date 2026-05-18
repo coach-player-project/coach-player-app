@@ -5,13 +5,15 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->resetDatabase();
+
         // 1. Create Admin
         $adminId = Str::uuid()->toString();
         DB::table('users')->insert([
@@ -103,6 +105,7 @@ class DatabaseSeeder extends Seeder
             'id' => $trainingId,
             'team_id' => $teamId,
             'created_by' => $coachId,
+            'event_type' => 'training',
             'title' => 'Trening wydajnościowy',
             'description' => 'Skupiamy się na motoryce i kondycji po przerwie.',
             'scheduled_at' => now()->addDays(2),
@@ -137,6 +140,7 @@ class DatabaseSeeder extends Seeder
             'id' => $pastTrainingId,
             'team_id' => $teamId,
             'created_by' => $coachId,
+            'event_type' => 'training',
             'title' => 'Trening taktyczny',
             'description' => 'Omawiamy nowe zagrywki.',
             'scheduled_at' => now()->subDays(2),
@@ -144,6 +148,20 @@ class DatabaseSeeder extends Seeder
             'canvas_data' => null,
             'google_event_id' => null,
             'created_at' => now()->subDays(5),
+        ]);
+
+        DB::table('training_sessions')->insert([
+            'id' => Str::uuid()->toString(),
+            'team_id' => $teamId,
+            'created_by' => $coachId,
+            'event_type' => 'match',
+            'title' => 'Mecz ligowy — KS Fikcyjny vs Orły',
+            'description' => 'Kolejka 12. Stadion miejski, godz. 18:00.',
+            'scheduled_at' => now()->addDays(5),
+            'duration_minutes' => 105,
+            'canvas_data' => null,
+            'google_event_id' => null,
+            'created_at' => now(),
         ]);
 
         // 9. Add Attendance & Fatigue Ratings for past training
@@ -196,5 +214,36 @@ class DatabaseSeeder extends Seeder
                 'notes' => 'Wykonuj zadania taktyczne',
             ]);
         }
+    }
+
+    /**
+     * Clears application data so db:seed can be re-run safely.
+     * Use migrate:fresh --seed for a full schema reset.
+     */
+    private function resetDatabase(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        $tables = [
+            'tactic_players',
+            'fatigue_ratings',
+            'attendance',
+            'training_exercises',
+            'tactics',
+            'training_sessions',
+            'messages',
+            'team_members',
+            'teams',
+            'personal_access_tokens',
+            'users',
+        ];
+
+        foreach ($tables as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
+        }
+
+        Schema::enableForeignKeyConstraints();
     }
 }
