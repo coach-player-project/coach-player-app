@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Mail, Lock, ShieldAlert, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, ShieldAlert, CheckCircle2, Loader2, ArrowRight, Users } from "lucide-react";
 import Link from "next/link";
+import { buildNextApiUrl } from "@/lib/api";
+
+type TeamOption = {
+  id: string;
+  name: string;
+};
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -13,19 +19,84 @@ export default function RegisterPage() {
     email: "",
     password: "",
     role: "player",
+    team_id: "",
   });
+
+  const [teams, setTeams] = useState<TeamOption[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (formData.role !== "player") {
+      setTeamsLoading(false);
+      setTeamsError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadTeams() {
+      setTeamsLoading(true);
+      setTeamsError(null);
+      try {
+        const res = await fetch(buildNextApiUrl("/teams/options"), {
+          headers: { Accept: "application/json" },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || "Nie udało się pobrać listy drużyn.");
+        }
+        const list = Array.isArray(data.data) ? data.data : [];
+        if (!cancelled) {
+          setTeams(
+            list.map((t: TeamOption) => ({
+              id: String(t.id),
+              name: String(t.name),
+            }))
+          );
+          if (list.length === 0) {
+            setTeamsError("Brak dostępnych drużyn. Poproś administratora o utworzenie drużyn.");
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setTeams([]);
+          setTeamsError(
+            err instanceof Error
+              ? err.message
+              : "Nie udało się połączyć z serwerem. Sprawdź, czy backend działa."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setTeamsLoading(false);
+        }
+      }
+    }
+
+    loadTeams();
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.role]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "role" && value === "coach") {
+        next.team_id = "";
+      }
+      return next;
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitRegistration = async () => {
     setLoading(true);
     setError(null);
 
@@ -42,17 +113,35 @@ export default function RegisterPage() {
       return;
     }
 
+    if (formData.role === "player" && !formData.team_id) {
+      setError("Wybierz drużynę, do której chcesz dołączyć.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("http://localhost:8000/api/auth/register", {
+      const payload: Record<string, string> = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      };
+      if (formData.role === "player") {
+        payload.team_id = formData.team_id;
+      }
+
+      const response = await fetch(buildNextApiUrl("/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
+        redirect: "manual",
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         if (data.errors) {
@@ -63,14 +152,15 @@ export default function RegisterPage() {
         throw new Error(data.message || "Wystąpił błąd podczas rejestracji.");
       }
 
+      setSuccessMessage(data.message ?? null);
       setSuccess(true);
-      // Reset form on success
       setFormData({
         first_name: "",
         last_name: "",
         email: "",
         password: "",
         role: "player",
+        team_id: "",
       });
       
     } catch (err: any) {
@@ -78,6 +168,11 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitRegistration();
   };
 
   if (success) {
@@ -90,7 +185,10 @@ export default function RegisterPage() {
             </div>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Rejestracja udana!</h2>
-          <p className="text-gray-400">Twoje konto zostało poprawnie utworzone. Możesz teraz przejść do panelu logowania.</p>
+          <p className="text-gray-400">
+            {successMessage ??
+              "Twoje konto zostało poprawnie utworzone. Możesz teraz przejść do panelu logowania."}
+          </p>
           <Link href="/login" className="block w-full">
             <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 rounded-xl h-12 text-lg transition-all">
               Przejdź do logowania <ArrowRight className="ml-2 h-5 w-5" />
@@ -113,7 +211,7 @@ export default function RegisterPage() {
           <p className="text-gray-400 text-sm">Stwórz nowe konto i rozpocznij zarządzanie swoim treningiem.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} action="#" method="post" className="space-y-5">
           {error && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl text-sm flex items-start animate-in fade-in slide-in-from-top-2">
               <ShieldAlert className="h-5 w-5 mr-3 shrink-0 mt-0.5" />
@@ -205,10 +303,47 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {formData.role === "player" && (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider pl-1">
+                Drużyna
+              </label>
+              <div className="relative group">
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors h-5 w-5 z-10 pointer-events-none" />
+                <select
+                  name="team_id"
+                  value={formData.team_id}
+                  onChange={handleChange}
+                  disabled={loading || teamsLoading}
+                  required
+                  className="w-full h-12 pl-10 pr-4 bg-[#252E46] border border-gray-700 text-white rounded-xl focus-visible:ring-2 focus-visible:ring-blue-500/50 focus:outline-none appearance-none transition-all disabled:opacity-60"
+                >
+                  <option value="" className="bg-[#252E46]">
+                    {teamsLoading ? "Ładowanie drużyn..." : "Wybierz drużynę"}
+                  </option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id} className="bg-[#252E46]">
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {teamsError && (
+                <p className="text-xs text-amber-400 pl-1">{teamsError}</p>
+              )}
+              {!teamsError && (
+                <p className="text-xs text-gray-500 pl-1">
+                  Administrator zaakceptuje Twoje zgłoszenie po rejestracji.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="pt-4">
-            <Button 
-              type="submit" 
+            <Button
+              type="button"
               disabled={loading}
+              onClick={() => void submitRegistration()}
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl text-lg shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (

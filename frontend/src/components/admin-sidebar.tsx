@@ -1,6 +1,6 @@
 "use client"
 
-import { Users, Settings, LayoutDashboard, CalendarDays, Shield } from "lucide-react"
+import { Users, Settings, LayoutDashboard, CalendarDays, Shield, UserCheck } from "lucide-react"
 
 import {
   Sidebar,
@@ -35,6 +35,11 @@ const items = [
     title: "Drużyny",
     url: "/pages/admin/teams",
     icon: Shield,
+  },
+  {
+    title: "Zgłoszenia zawodników",
+    url: "/pages/admin/memberships",
+    icon: UserCheck,
   },
   {
     title: "Moje dane",
