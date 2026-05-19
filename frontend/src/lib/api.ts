@@ -1,8 +1,25 @@
+import { buildBackendApiUrl, getClientBackendUrl } from "./backend-url";
+
+export function getApiBaseUrl(): string {
+  return getClientBackendUrl();
+}
+
+/** Bezpośredni URL Laravela (np. apiFetch). */
+export function buildApiUrl(endpoint: string): string {
+  return buildBackendApiUrl(getClientBackendUrl(), endpoint);
+}
+
+/** Proxy przez Next.js – ten sam origin, zawsze POST z JS (rejestracja, publiczne GET). */
+export function buildNextApiUrl(endpoint: string): string {
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `/api${path.startsWith("/api/") ? path.slice(4) : path}`;
+}
+
 export async function apiFetch(
     endpoint: string,
     options: RequestInit = {}
   ) {
-    const url = `http://localhost:8000/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    const url = buildApiUrl(endpoint);
 
     // Pobierz token Bearer z localStorage (Sanctum token-based auth)
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
