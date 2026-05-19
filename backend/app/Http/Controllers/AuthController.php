@@ -238,4 +238,155 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Send password reset token.
+     */
+    #[OA\Post(
+        path: '/api/auth/forgot-password',
+        summary: 'Żądanie resetu hasła',
+        description: 'Generuje token resetujący hasło i wysyła go (w środowisku deweloperskim token jest zwracany w odpowiedzi).',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    required: ['email'],
+                    properties: [
+                        new OA\Property(property: 'email', type: 'string', format: 'email')
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Link do resetu hasła został wysłany'),
+            new OA\Response(response: 422, description: 'Błąd walidacji danych')
+        ]
+    )]
+    public function forgotPassword(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'email' => ['required', 'string', 'email'],
+            ]);
+
+            $user = User::where('email', $validatedData['email'])->first();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Jeśli konto z podanym adresem email istnieje, wysłano na nie instrukcje resetowania hasła.'
+                ], 200);
+            }
+
+            $token = \Illuminate\Support\Str::random(60);
+
+            \Illuminate\Support\Facades\DB::table('password_resets')->insert([
+                'id' => \Illuminate\Support\Str::uuid(),
+                'user_id' => $user->id,
+                'token' => Hash::make($token),
+                'expires_at' => now()->addMinutes(60),
+                'used' => false,
+            ]);
+
+            // For development purposes, we return the token in the response
+            return response()->json([
+                'message' => 'Kod resetujący został wygenerowany pomyślnie!',
+                'debug_token' => $token,
+                'email' => $user->email
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Błąd walidacji danych.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Wystąpił błąd podczas generowania tokenu.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset the password using the token.
+     */
+    #[OA\Post(
+        path: '/api/auth/reset-password',
+        summary: 'Reset hasła',
+        description: 'Ustawia nowe hasło na podstawie prawidłowego tokenu.',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    required: ['email', 'token', 'password'],
+                    properties: [
+                        new OA\Property(property: 'email', type: 'string', format: 'email'),
+                        new OA\Property(property: 'token', type: 'string'),
+                        new OA\Property(property: 'password', type: 'string', minLength: 8)
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Hasło zostało pomyślnie zmienione'),
+            new OA\Response(response: 400, description: 'Nieprawidłowy lub wygasły token')
+        ]
+    )]
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'email' => ['required', 'string', 'email'],
+                'token' => ['required', 'string'],
+                'password' => ['required', 'string', 'min:8'],
+            ]);
+
+            $user = User::where('email', $validatedData['email'])->first();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Nieprawidłowy adres email lub token.'
+                ], 400);
+            }
+
+            $passwordReset = \Illuminate\Support\Facades\DB::table('password_resets')
+                ->where('user_id', $user->id)
+                ->where('used', false)
+                ->where('expires_at', '>=', now())
+                ->get()
+                ->first(function ($reset) use ($validatedData) {
+                    return Hash::check($validatedData['token'], $reset->token);
+                });
+
+            if (!$passwordReset) {
+                return response()->json([
+                    'message' => 'Nieprawidłowy lub wygasły token.'
+                ], 400);
+            }
+
+            $user->password_hash = Hash::make($validatedData['password']);
+            $user->save();
+
+            \Illuminate\Support\Facades\DB::table('password_resets')
+                ->where('id', $passwordReset->id)
+                ->update(['used' => true]);
+
+            return response()->json([
+                'message' => 'Twoje hasło zostało pomyślnie zmienione. Możesz się teraz zalogować.'
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Błąd walidacji danych.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Wystąpił błąd podczas resetowania hasła.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
