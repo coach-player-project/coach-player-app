@@ -305,4 +305,39 @@ class TeamController extends Controller
 
         return response()->json(['data' => $coaches], 200);
     }
+
+    /**
+     * Teams assigned to the authenticated coach.
+     */
+    public function coachIndex(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $query = Team::query()->where('coach_id', $user->id);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $sortBy = $request->input('sort_by', 'name');
+        $sortDir = strtolower($request->input('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $allowedSorts = ['name', 'created_at'];
+        if (in_array($sortBy, $allowedSorts, true)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('name', 'asc');
+        }
+
+        $perPage = (int) $request->input('per_page', 100);
+        $teams = $query->paginate($perPage > 0 ? $perPage : 100);
+
+        return response()->json($teams);
+    }
 }

@@ -22,8 +22,8 @@ const items = [
     icon: LayoutDashboard,
   },
   {
-    title: "Planowanie treningów",
-    url: "/pages/coach/trainings",
+    title: "Wydarzenia",
+    url: "/pages/coach/events",
     icon: Calendar,
   },
   {

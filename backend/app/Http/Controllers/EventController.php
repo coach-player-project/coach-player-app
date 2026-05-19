@@ -9,18 +9,25 @@ use OpenApi\Attributes as OA;
 
 class EventController extends Controller
 {
+    private const EVENT_TYPES = ['training', 'match'];
+
+    // -------------------------------------------------------------------------
+    // Admin endpoints
+    // -------------------------------------------------------------------------
+
     #[OA\Get(
         path: '/api/admin/events',
         summary: 'Lista wydarzeń (treningów)',
         description: 'Zwraca listę wydarzeń (trening sessions) z możliwością filtrowania, sortowania i paginacji.',
         security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: 'search', in: 'query', description: 'Fraza wyszukiwania po tytule, opisie lub nazwie drużyny', required: false, schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'team_id', in: 'query', description: 'ID drużyny (UUID) do filtrowania wydarzeń', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
-            new OA\Parameter(name: 'sort_by', in: 'query', description: 'Kolumna sortowania (scheduled_at, created_at, duration_minutes, title)', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
-            new OA\Parameter(name: 'sort_dir', in: 'query', description: 'Kierunek sortowania (asc/desc)', required: false, schema: new OA\Schema(type: 'string', default: 'desc')),
-            new OA\Parameter(name: 'per_page', in: 'query', description: 'Liczba wyników na stronę', required: false, schema: new OA\Schema(type: 'integer', default: 10)),
-            new OA\Parameter(name: 'page', in: 'query', description: 'Numer strony', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'team_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'event_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['training', 'match'])),
+            new OA\Parameter(name: 'sort_by', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
+            new OA\Parameter(name: 'sort_dir', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'desc')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 10)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Lista wydarzeń została pobrana pomyślnie'),
@@ -28,17 +35,200 @@ class EventController extends Controller
     )]
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', 10);
-        $page = (int) $request->input('page', 1);
-        if ($perPage <= 0) {
-            $perPage = 10;
+        return $this->listEvents($request);
+    }
+
+    #[OA\Post(
+        path: '/api/admin/events',
+        summary: 'Utwórz nowe wydarzenie',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 201, description: 'Wydarzenie zostało utworzone pomyślnie'),
+        ]
+    )]
+    public function store(Request $request)
+    {
+        return $this->createEvent($request);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/events/{id}',
+        summary: 'Pobierz szczegóły wydarzenia',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało pobrane pomyślnie'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+        ]
+    )]
+    public function show($id)
+    {
+        return $this->getEvent($id);
+    }
+
+    #[OA\Put(
+        path: '/api/admin/events/{id}',
+        summary: 'Zaktualizuj istniejące wydarzenie',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało zaktualizowane pomyślnie'),
+        ]
+    )]
+    public function update(Request $request, $id)
+    {
+        return $this->updateEvent($request, $id);
+    }
+
+    #[OA\Delete(
+        path: '/api/admin/events/{id}',
+        summary: 'Usuń wydarzenie',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zostało usunięte pomyślnie'),
+        ]
+    )]
+    public function destroy($id)
+    {
+        return $this->deleteEvent($id);
+    }
+
+    // -------------------------------------------------------------------------
+    // Coach endpoints (scoped to coach teams)
+    // -------------------------------------------------------------------------
+
+    #[OA\Get(
+        path: '/api/coach/events',
+        summary: 'Lista wydarzeń trenera',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista wydarzeń trenera'),
+        ]
+    )]
+    public function coachIndex(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
         }
-        if ($page <= 0) {
-            $page = 1;
+
+        return $this->listEvents($request, $user->id);
+    }
+
+    #[OA\Post(
+        path: '/api/coach/events',
+        summary: 'Utwórz wydarzenie (trener)',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 201, description: 'Wydarzenie utworzone'),
+        ]
+    )]
+    public function coachStore(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
         }
+
+        $validated = $this->validateEventPayload($request, true);
+        if ($validated instanceof \Illuminate\Http\JsonResponse) {
+            return $validated;
+        }
+
+        if (!$this->coachOwnsTeam($user->id, $validated['team_id'])) {
+            return response()->json(['message' => 'Nie masz uprawnień do tej drużyny.'], 403);
+        }
+
+        return $this->createEvent($request, $validated);
+    }
+
+    #[OA\Get(
+        path: '/api/coach/events/{id}',
+        summary: 'Szczegóły wydarzenia (trener)',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie pobrane'),
+            new OA\Response(response: 403, description: 'Brak uprawnień'),
+            new OA\Response(response: 404, description: 'Nie znaleziono'),
+        ]
+    )]
+    public function coachShow(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->coachOwnsEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        return $this->getEvent($id);
+    }
+
+    #[OA\Put(
+        path: '/api/coach/events/{id}',
+        summary: 'Aktualizuj wydarzenie (trener)',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie zaktualizowane'),
+        ]
+    )]
+    public function coachUpdate(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->coachOwnsEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        $validated = $this->validateEventPayload($request, false);
+        if ($validated instanceof \Illuminate\Http\JsonResponse) {
+            return $validated;
+        }
+
+        if (isset($validated['team_id']) && !$this->coachOwnsTeam($user->id, $validated['team_id'])) {
+            return response()->json(['message' => 'Nie masz uprawnień do tej drużyny.'], 403);
+        }
+
+        return $this->updateEvent($request, $id, $validated);
+    }
+
+    #[OA\Delete(
+        path: '/api/coach/events/{id}',
+        summary: 'Usuń wydarzenie (trener)',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie usunięte'),
+        ]
+    )]
+    public function coachDestroy(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->coachOwnsEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        return $this->deleteEvent($id);
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared logic
+    // -------------------------------------------------------------------------
+
+    private function listEvents(Request $request, ?string $coachId = null)
+    {
+        $perPage = max(1, (int) $request->input('per_page', 10));
+        $page = max(1, (int) $request->input('page', 1));
 
         $search = $request->input('search');
         $teamId = $request->input('team_id');
+        $eventType = $request->input('event_type');
 
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -48,23 +238,22 @@ class EventController extends Controller
             'created_at' => 'training_sessions.created_at',
             'duration_minutes' => 'training_sessions.duration_minutes',
             'title' => 'training_sessions.title',
+            'event_type' => 'training_sessions.event_type',
         ];
         $sortColumn = $sortColumns[$sortBy] ?? $sortColumns['created_at'];
 
-        $baseQuery = DB::table('training_sessions')
-            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by')
-            ->select([
-                'training_sessions.*',
-                'teams.name as team_name',
-                'users.first_name as coach_first_name',
-                'users.last_name as coach_last_name',
-                'users.email as coach_email',
-                'users.role as coach_role',
-            ]);
+        $baseQuery = $this->baseEventQuery();
+
+        if ($coachId !== null) {
+            $baseQuery->where('teams.coach_id', $coachId);
+        }
 
         if (!empty($teamId)) {
             $baseQuery->where('training_sessions.team_id', $teamId);
+        }
+
+        if (!empty($eventType) && in_array($eventType, self::EVENT_TYPES, true)) {
+            $baseQuery->where('training_sessions.event_type', $eventType);
         }
 
         if (!empty($search)) {
@@ -98,51 +287,17 @@ class EventController extends Controller
         ], 200);
     }
 
-    #[OA\Post(
-        path: '/api/admin/events',
-        summary: 'Utwórz nowe wydarzenie (trening)',
-        description: 'Tworzy nowe wydarzenie treningowe powiązane z drużyną.',
-        security: [['sanctum' => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: 'application/x-www-form-urlencoded',
-                schema: new OA\Schema(
-                    required: ['team_id', 'title', 'scheduled_at', 'duration_minutes'],
-                    properties: [
-                        new OA\Property(property: 'team_id', type: 'string', format: 'uuid'),
-                        new OA\Property(property: 'title', type: 'string'),
-                        new OA\Property(property: 'description', type: 'string', nullable: true),
-                        new OA\Property(property: 'scheduled_at', type: 'string', format: 'date-time'),
-                        new OA\Property(property: 'duration_minutes', type: 'integer', minimum: 1),
-                        new OA\Property(property: 'canvas_data', type: 'string', nullable: true),
-                        new OA\Property(property: 'google_event_id', type: 'string', nullable: true),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 201, description: 'Wydarzenie zostało utworzone pomyślnie'),
-            new OA\Response(response: 401, description: 'Brak autoryzacji'),
-            new OA\Response(response: 422, description: 'Błąd walidacji danych'),
-        ]
-    )]
-    public function store(Request $request)
+    private function createEvent(Request $request, ?array $prevalidated = null)
     {
         $user = $request->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $validatedData = $request->validate([
-            'team_id' => ['required', 'uuid', 'exists:teams,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'scheduled_at' => ['required', 'date'],
-            'duration_minutes' => ['required', 'integer', 'min:1'],
-            'canvas_data' => ['nullable', 'string'],
-            'google_event_id' => ['nullable', 'string'],
-        ]);
+        $validatedData = $prevalidated ?? $this->validateEventPayload($request, true);
+        if ($validatedData instanceof \Illuminate\Http\JsonResponse) {
+            return $validatedData;
+        }
 
         $id = (string) Str::uuid();
 
@@ -150,6 +305,7 @@ class EventController extends Controller
             'id' => $id,
             'team_id' => $validatedData['team_id'],
             'created_by' => $user->id,
+            'event_type' => $validatedData['event_type'],
             'title' => $validatedData['title'],
             'description' => $validatedData['description'] ?? null,
             'scheduled_at' => $validatedData['scheduled_at'],
@@ -159,19 +315,7 @@ class EventController extends Controller
             'created_at' => now(),
         ]);
 
-        $event = DB::table('training_sessions')
-            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by')
-            ->select([
-                'training_sessions.*',
-                'teams.name as team_name',
-                'users.first_name as coach_first_name',
-                'users.last_name as coach_last_name',
-                'users.email as coach_email',
-                'users.role as coach_role',
-            ])
-            ->where('training_sessions.id', $id)
-            ->first();
+        $event = $this->findEventById($id);
 
         return response()->json([
             'message' => 'Event created successfully.',
@@ -179,40 +323,9 @@ class EventController extends Controller
         ], 201);
     }
 
-    #[OA\Get(
-        path: '/api/admin/events/{id}',
-        summary: 'Pobierz szczegóły wydarzenia',
-        description: 'Zwraca pojedyncze wydarzenie (trening) na podstawie jego ID.',
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                required: true,
-                description: 'ID wydarzenia (UUID)',
-                schema: new OA\Schema(type: 'string', format: 'uuid')
-            ),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Wydarzenie zostało pobrane pomyślnie'),
-            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
-        ]
-    )]
-    public function show($id)
+    private function getEvent($id)
     {
-        $event = DB::table('training_sessions')
-            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by')
-            ->select([
-                'training_sessions.*',
-                'teams.name as team_name',
-                'users.first_name as coach_first_name',
-                'users.last_name as coach_last_name',
-                'users.email as coach_email',
-                'users.role as coach_role',
-            ])
-            ->where('training_sessions.id', $id)
-            ->first();
+        $event = $this->findEventById($id);
 
         if (!$event) {
             return response()->json(['message' => 'Event not found.'], 404);
@@ -221,52 +334,62 @@ class EventController extends Controller
         return response()->json(['event' => $event], 200);
     }
 
-    #[OA\Put(
-        path: '/api/admin/events/{id}',
-        summary: 'Zaktualizuj istniejące wydarzenie',
-        description: 'Aktualizuje podane pola wydarzenia (treningu).',
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                required: true,
-                description: 'ID wydarzenia (UUID)',
-                schema: new OA\Schema(type: 'string', format: 'uuid')
-            ),
-        ],
-        requestBody: new OA\RequestBody(
-            required: false,
-            content: new OA\MediaType(
-                mediaType: 'application/x-www-form-urlencoded',
-                schema: new OA\Schema(
-                    properties: [
-                        new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true),
-                        new OA\Property(property: 'title', type: 'string', nullable: true),
-                        new OA\Property(property: 'description', type: 'string', nullable: true),
-                        new OA\Property(property: 'scheduled_at', type: 'string', format: 'date-time', nullable: true),
-                        new OA\Property(property: 'duration_minutes', type: 'integer', minimum: 1, nullable: true),
-                        new OA\Property(property: 'canvas_data', type: 'string', nullable: true),
-                        new OA\Property(property: 'google_event_id', type: 'string', nullable: true),
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: 'Wydarzenie zostało zaktualizowane pomyślnie'),
-            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
-            new OA\Response(response: 422, description: 'Błąd walidacji danych'),
-        ]
-    )]
-    public function update(Request $request, $id)
+    private function updateEvent(Request $request, $id, ?array $prevalidated = null)
     {
         $exists = DB::table('training_sessions')->where('id', $id)->exists();
         if (!$exists) {
             return response()->json(['message' => 'Event not found.'], 404);
         }
 
-        $validatedData = $request->validate([
+        $validatedData = $prevalidated ?? $this->validateEventPayload($request, false);
+        if ($validatedData instanceof \Illuminate\Http\JsonResponse) {
+            return $validatedData;
+        }
+
+        if (empty($validatedData)) {
+            return response()->json(['message' => 'No valid fields to update.'], 422);
+        }
+
+        DB::table('training_sessions')
+            ->where('id', $id)
+            ->update($validatedData);
+
+        $event = $this->findEventById($id);
+
+        return response()->json([
+            'message' => 'Event updated successfully.',
+            'event' => $event,
+        ], 200);
+    }
+
+    private function deleteEvent($id)
+    {
+        $deleted = DB::table('training_sessions')->where('id', $id)->delete();
+        if ($deleted === 0) {
+            return response()->json(['message' => 'Event not found.'], 404);
+        }
+
+        return response()->json(['message' => 'Event deleted successfully.'], 200);
+    }
+
+    private function validateEventPayload(Request $request, bool $isCreate)
+    {
+        if ($isCreate) {
+            return $request->validate([
+                'team_id' => ['required', 'uuid', 'exists:teams,id'],
+                'event_type' => ['required', 'string', 'in:' . implode(',', self::EVENT_TYPES)],
+                'title' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'scheduled_at' => ['required', 'date'],
+                'duration_minutes' => ['required', 'integer', 'min:1'],
+                'canvas_data' => ['nullable', 'string'],
+                'google_event_id' => ['nullable', 'string'],
+            ]);
+        }
+
+        return $request->validate([
             'team_id' => ['sometimes', 'required', 'uuid', 'exists:teams,id'],
+            'event_type' => ['sometimes', 'required', 'string', 'in:' . implode(',', self::EVENT_TYPES)],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'scheduled_at' => ['sometimes', 'required', 'date'],
@@ -274,12 +397,11 @@ class EventController extends Controller
             'canvas_data' => ['sometimes', 'nullable', 'string'],
             'google_event_id' => ['sometimes', 'nullable', 'string'],
         ]);
+    }
 
-        DB::table('training_sessions')
-            ->where('id', $id)
-            ->update($validatedData);
-
-        $event = DB::table('training_sessions')
+    private function baseEventQuery()
+    {
+        return DB::table('training_sessions')
             ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
             ->join('users', 'users.id', '=', 'training_sessions.created_by')
             ->select([
@@ -289,42 +411,30 @@ class EventController extends Controller
                 'users.last_name as coach_last_name',
                 'users.email as coach_email',
                 'users.role as coach_role',
-            ])
-            ->where('training_sessions.id', $id)
-            ->first();
-
-        return response()->json([
-            'message' => 'Event updated successfully.',
-            'event' => $event,
-        ], 200);
+            ]);
     }
 
-    #[OA\Delete(
-        path: '/api/admin/events/{id}',
-        summary: 'Usuń wydarzenie',
-        description: 'Usuwa wydarzenie (trening) na podstawie ID.',
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(
-                name: 'id',
-                in: 'path',
-                required: true,
-                description: 'ID wydarzenia (UUID)',
-                schema: new OA\Schema(type: 'string', format: 'uuid')
-            ),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Wydarzenie zostało usunięte pomyślnie'),
-            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
-        ]
-    )]
-    public function destroy($id)
+    private function findEventById(string $id)
     {
-        $deleted = DB::table('training_sessions')->where('id', $id)->delete();
-        if ($deleted === 0) {
-            return response()->json(['message' => 'Event not found.'], 404);
-        }
+        return $this->baseEventQuery()
+            ->where('training_sessions.id', $id)
+            ->first();
+    }
 
-        return response()->json(['message' => 'Event deleted successfully.'], 200);
+    private function coachOwnsTeam(string $coachId, string $teamId): bool
+    {
+        return DB::table('teams')
+            ->where('id', $teamId)
+            ->where('coach_id', $coachId)
+            ->exists();
+    }
+
+    private function coachOwnsEvent(string $coachId, string $eventId): bool
+    {
+        return DB::table('training_sessions')
+            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
+            ->where('training_sessions.id', $eventId)
+            ->where('teams.coach_id', $coachId)
+            ->exists();
     }
 }

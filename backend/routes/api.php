@@ -54,6 +54,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Trenerze w panelu zarządzania treningami']);
         });
+        Route::get('/teams', [TeamController::class, 'coachIndex']);
+        Route::get('/events', [EventController::class, 'coachIndex']);
+        Route::post('/events', [EventController::class, 'coachStore']);
+        Route::get('/events/{id}', [EventController::class, 'coachShow']);
+        Route::put('/events/{id}', [EventController::class, 'coachUpdate']);
+        Route::delete('/events/{id}', [EventController::class, 'coachDestroy']);
     });
 
     // -----------------------------------------------------
