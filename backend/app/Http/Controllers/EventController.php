@@ -218,6 +218,70 @@ class EventController extends Controller
     }
 
     // -------------------------------------------------------------------------
+    // Player endpoints (scoped to player approved teams)
+    // -------------------------------------------------------------------------
+
+    #[OA\Get(
+        path: '/api/player/events',
+        summary: 'Lista wydarzeń zawodnika',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista wydarzeń zawodnika'),
+        ]
+    )]
+    public function playerIndex(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $teamIds = DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->pluck('team_id')
+            ->toArray();
+
+        if (empty($teamIds)) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'total' => 0,
+                    'per_page' => max(1, (int) $request->input('per_page', 10)),
+                    'current_page' => max(1, (int) $request->input('page', 1)),
+                    'last_page' => 1,
+                ],
+            ], 200);
+        }
+
+        return $this->listPlayerEvents($request, $teamIds);
+    }
+
+    #[OA\Get(
+        path: '/api/player/events/{id}',
+        summary: 'Szczegóły wydarzenia (zawodnik)',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Wydarzenie pobrane'),
+            new OA\Response(response: 403, description: 'Brak uprawnień'),
+            new OA\Response(response: 404, description: 'Nie znaleziono'),
+        ]
+    )]
+    public function playerShow(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->playerCanViewEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        return $this->getEvent($id);
+    }
+
+    // -------------------------------------------------------------------------
     // Shared logic
     // -------------------------------------------------------------------------
 
@@ -435,6 +499,78 @@ class EventController extends Controller
             ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
             ->where('training_sessions.id', $eventId)
             ->where('teams.coach_id', $coachId)
+            ->exists();
+    }
+
+    private function listPlayerEvents(Request $request, array $teamIds)
+    {
+        $perPage = max(1, (int) $request->input('per_page', 10));
+        $page = max(1, (int) $request->input('page', 1));
+
+        $search = $request->input('search');
+        $eventType = $request->input('event_type');
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $sortColumns = [
+            'scheduled_at' => 'training_sessions.scheduled_at',
+            'created_at' => 'training_sessions.created_at',
+            'duration_minutes' => 'training_sessions.duration_minutes',
+            'title' => 'training_sessions.title',
+            'event_type' => 'training_sessions.event_type',
+        ];
+        $sortColumn = $sortColumns[$sortBy] ?? $sortColumns['created_at'];
+
+        $baseQuery = $this->baseEventQuery()
+            ->whereIn('training_sessions.team_id', $teamIds);
+
+        if (!empty($eventType) && in_array($eventType, self::EVENT_TYPES, true)) {
+            $baseQuery->where('training_sessions.event_type', $eventType);
+        }
+
+        if (!empty($search)) {
+            $searchLike = '%' . $search . '%';
+            $baseQuery->where(function ($q) use ($searchLike) {
+                $q->where('training_sessions.title', 'like', $searchLike)
+                    ->orWhere('training_sessions.description', 'like', $searchLike)
+                    ->orWhere('teams.name', 'like', $searchLike);
+            });
+        }
+
+        $total = (clone $baseQuery)->count();
+        $offset = ($page - 1) * $perPage;
+
+        $items = (clone $baseQuery)
+            ->orderBy($sortColumn, $sortDir)
+            ->offset($offset)
+            ->limit($perPage)
+            ->get();
+
+        $lastPage = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
+
+        return response()->json([
+            'data' => $items,
+            'meta' => [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+            ],
+        ], 200);
+    }
+
+    private function playerCanViewEvent(string $userId, string $eventId): bool
+    {
+        $event = DB::table('training_sessions')->where('id', $eventId)->first();
+        if (!$event) {
+            return false;
+        }
+
+        return DB::table('team_members')
+            ->where('team_id', $event->team_id)
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
             ->exists();
     }
 }

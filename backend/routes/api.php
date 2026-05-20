@@ -45,6 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/teams/{id}', [TeamController::class, 'show']);
         Route::put('/teams/{id}', [TeamController::class, 'update']);
         Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
+
+        // Zarządzanie zgłoszeniami do drużyn
+        Route::get('/team-members', [\App\Http\Controllers\TeamMemberController::class, 'index']);
+        Route::post('/team-members/{id}/approve', [\App\Http\Controllers\TeamMemberController::class, 'approve']);
+        Route::post('/team-members/{id}/reject', [\App\Http\Controllers\TeamMemberController::class, 'reject']);
     });
 
 
@@ -71,5 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Zawodniku w swoim prywatnym panelu wyników']);
         });
+        Route::get('/events', [EventController::class, 'playerIndex']);
+        Route::get('/events/{id}', [EventController::class, 'playerShow']);
     });
 });

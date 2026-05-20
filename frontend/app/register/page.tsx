@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (formData.role !== "player") {
+    if (formData.role !== "player" && formData.role !== "coach") {
       setTeamsLoading(false);
       setTeamsError(null);
       return;
@@ -89,7 +89,7 @@ export default function RegisterPage() {
     const { name, value } = e.target;
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
-      if (name === "role" && value === "coach") {
+      if (name === "role" && value !== "player" && value !== "coach") {
         next.team_id = "";
       }
       return next;
@@ -113,7 +113,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.role === "player" && !formData.team_id) {
+    if ((formData.role === "player" || formData.role === "coach") && !formData.team_id) {
       setError("Wybierz drużynę, do której chcesz dołączyć.");
       setLoading(false);
       return;
@@ -127,7 +127,7 @@ export default function RegisterPage() {
         password: formData.password,
         role: formData.role,
       };
-      if (formData.role === "player") {
+      if (formData.role === "player" || formData.role === "coach") {
         payload.team_id = formData.team_id;
       }
 
@@ -303,7 +303,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {formData.role === "player" && (
+          {(formData.role === "player" || formData.role === "coach") && (
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider pl-1">
                 Drużyna

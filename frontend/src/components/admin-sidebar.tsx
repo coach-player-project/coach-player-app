@@ -37,7 +37,7 @@ const items = [
     icon: Shield,
   },
   {
-    title: "Zgłoszenia zawodników",
+    title: "Zgłoszenia do drużyn",
     url: "/pages/admin/memberships",
     icon: UserCheck,
   },

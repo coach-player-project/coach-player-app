@@ -39,7 +39,7 @@ class TeamMemberController extends Controller
             ->where('status', $status)
             ->with([
                 'team:id,name',
-                'user:id,first_name,last_name,email,created_at',
+                'user:id,first_name,last_name,email,role,created_at',
             ])
             ->orderByDesc('joined_at')
             ->paginate($perPage);
@@ -73,10 +73,16 @@ class TeamMemberController extends Controller
         $member->joined_at = now();
         $member->save();
 
-        $member->load(['team:id,name', 'user:id,first_name,last_name,email']);
+        $member->load(['team:id,name', 'user:id,first_name,last_name,email,role']);
+
+        if ($member->user && $member->user->role === 'coach') {
+            \Illuminate\Support\Facades\DB::table('teams')
+                ->where('id', $member->team_id)
+                ->update(['coach_id' => $member->user_id]);
+        }
 
         return response()->json([
-            'message' => 'Przynależność zawodnika do drużyny została zaakceptowana.',
+            'message' => 'Przynależność do drużyny została zaakceptowana.',
             'membership' => $member,
         ]);
     }
