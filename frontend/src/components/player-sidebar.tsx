@@ -27,8 +27,8 @@ const items = [
     icon: CalendarDays,
   },
   {
-    title: "Podgląd treningów",
-    url: "/pages/player/trainings",
+    title: "Wydarzenia",
+    url: "/pages/player/events",
     icon: Dumbbell,
   },
   {

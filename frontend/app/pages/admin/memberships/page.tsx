@@ -20,6 +20,7 @@ type UserRef = {
   first_name: string;
   last_name: string;
   email: string;
+  role?: string;
   created_at?: string;
 };
 
@@ -96,10 +97,10 @@ export default function AdminMembershipsPage() {
     <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-black">
-          Zgłoszenia zawodników do drużyn
+          Zgłoszenia do drużyn
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Zaakceptuj lub odrzuć prośby zawodników o dołączenie do wybranej drużyny.
+          Zaakceptuj lub odrzuć prośby o dołączenie do wybranej drużyny.
           {meta.total > 0 && (
             <span className="ml-1 font-medium text-amber-600">
               Oczekujących: {meta.total}
@@ -123,7 +124,7 @@ export default function AdminMembershipsPage() {
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="text-black">Zawodnik</TableHead>
+              <TableHead className="text-black">Użytkownik</TableHead>
               <TableHead className="text-black">Drużyna</TableHead>
               <TableHead className="text-black">Status</TableHead>
               <TableHead className="text-right text-black">Akcje</TableHead>
@@ -147,7 +148,14 @@ export default function AdminMembershipsPage() {
               items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <div className="font-semibold text-black">{fullName(item.user)}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-black">{fullName(item.user)}</span>
+                      {item.user?.role && (
+                        <Badge className={item.user.role === 'coach' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 hover:bg-emerald-500/10 shadow-none' : 'bg-blue-500/10 text-blue-700 border-blue-500/10 hover:bg-blue-500/10 shadow-none'}>
+                          {item.user.role === 'coach' ? 'Trener' : 'Zawodnik'}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{item.user?.email}</div>
                   </TableCell>
                   <TableCell className="font-medium text-black">

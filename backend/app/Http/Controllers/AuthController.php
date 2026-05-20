@@ -28,7 +28,8 @@ class AuthController extends Controller
                         new OA\Property(property: 'last_name', type: 'string'),
                         new OA\Property(property: 'email', type: 'string', format: 'email'),
                         new OA\Property(property: 'password', type: 'string', minLength: 8),
-                        new OA\Property(property: 'role', type: 'string', enum: ['coach', 'player'])
+                        new OA\Property(property: 'role', type: 'string', enum: ['coach', 'player']),
+                        new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true)
                     ]
                 )
             )
@@ -47,6 +48,7 @@ class AuthController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string', 'min:8'],
                 'role' => ['required', 'string', 'in:coach,player'],
+                'team_id' => ['required_if:role,player,coach', 'nullable', 'uuid', 'exists:teams,id'],
             ]);
 
             $user = User::create([
@@ -56,6 +58,16 @@ class AuthController extends Controller
                 'password_hash' => Hash::make($validatedData['password']),
                 'role' => $validatedData['role'],
             ]);
+
+            if (!empty($validatedData['team_id'])) {
+                \Illuminate\Support\Facades\DB::table('team_members')->insert([
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'team_id' => $validatedData['team_id'],
+                    'user_id' => $user->id,
+                    'status' => 'pending',
+                    'joined_at' => now(),
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Użytkownik został pomyślnie zarejestrowany.',

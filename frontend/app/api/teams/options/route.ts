@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildBackendApiUrl, getServerBackendUrl } from "@/lib/backend-url";
 
 export async function GET() {
-  const res = await fetch(buildBackendApiUrl(getServerBackendUrl(), "/teams/options"), {
+  const res = await fetch(buildBackendApiUrl(getServerBackendUrl(), "/teams?per_page=100"), {
     headers: { Accept: "application/json" },
     cache: "no-store",
   });
