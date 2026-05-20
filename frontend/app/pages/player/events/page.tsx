@@ -20,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Calendar, Clock, Search, Shield, User, Mail, ChevronRight, Dumbbell, Trophy } from "lucide-react"
+import { Calendar, Clock, Search, Shield, User, Mail, ChevronRight, Dumbbell, Trophy, Check, X } from "lucide-react"
 
 type EventType = "training" | "match"
 
@@ -37,6 +37,9 @@ type EventItem = {
   coach_last_name?: string
   coach_email?: string
   coach_role?: string
+  attendance_status?: "obecny" | "nieobecny" | null
+  attendance_note?: string | null
+  attendance_responded_at?: string | null
 }
 
 type EventsResponse = {
@@ -70,11 +73,45 @@ export default function PlayerEventsPage() {
     last_page: 1,
   })
 
-  // Selected event for detail sheet
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [eventDetails, setEventDetails] = useState<EventItem | null>(null)
+
+  const [submittingAttendance, setSubmittingAttendance] = useState(false)
+  const [attendanceStatusInput, setAttendanceStatusInput] = useState<"obecny" | "nieobecny" | null>(null)
+  const [attendanceNoteInput, setAttendanceNoteInput] = useState("")
+
+  useEffect(() => {
+    if (eventDetails) {
+      setAttendanceStatusInput(eventDetails.attendance_status ?? null)
+      setAttendanceNoteInput(eventDetails.attendance_note ?? "")
+    } else {
+      setAttendanceStatusInput(null)
+      setAttendanceNoteInput("")
+    }
+  }, [eventDetails])
+
+  async function handleSaveAttendance() {
+    if (!selectedEventId || !attendanceStatusInput) return
+    setSubmittingAttendance(true)
+    try {
+      const res = await apiFetch(`/player/events/${selectedEventId}/attendance`, {
+        method: "POST",
+        body: JSON.stringify({
+          status: attendanceStatusInput,
+          note: attendanceNoteInput.trim() || null,
+        }),
+      }) as { event: EventItem }
+      
+      setEventDetails(res.event)
+      setItems((prev) => prev.map((item) => item.id === selectedEventId ? { ...item, ...res.event } : item))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Wystąpił błąd podczas zapisywania obecności.")
+    } finally {
+      setSubmittingAttendance(false)
+    }
+  }
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams()
@@ -217,13 +254,14 @@ export default function PlayerEventsPage() {
                 <TableHead className="font-bold text-gray-700">Drużyna</TableHead>
                 <TableHead className="font-bold text-gray-700">Termin</TableHead>
                 <TableHead className="font-bold text-gray-700">Czas trwania</TableHead>
+                <TableHead className="font-bold text-gray-700">Obecność</TableHead>
                 <TableHead className="w-[100px] text-right font-bold text-gray-700">Akcja</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-gray-400">
+                  <TableCell colSpan={7} className="text-center py-12 text-gray-400">
                     <div className="flex flex-col items-center gap-2 justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
                       <span className="text-sm font-medium">Ładowanie wydarzeń...</span>
@@ -232,7 +270,7 @@ export default function PlayerEventsPage() {
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-16 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-16 text-gray-500">
                     <div className="max-w-md mx-auto space-y-3">
                       <Calendar className="w-12 h-12 text-gray-300 mx-auto" />
                       <h3 className="font-semibold text-gray-800 text-lg">Brak zaplanowanych wydarzeń</h3>
@@ -287,6 +325,23 @@ export default function PlayerEventsPage() {
                         <Clock className="w-3.5 h-3.5 text-gray-400" />
                         {item.duration_minutes} min
                       </span>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      {item.attendance_status === "obecny" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-2.5 py-1 text-xs font-bold text-green-700 shadow-sm shadow-green-50/30">
+                          <Check className="w-3 h-3 text-green-600" />
+                          Obecny
+                        </span>
+                      ) : item.attendance_status === "nieobecny" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700 shadow-sm shadow-rose-50/30">
+                          <X className="w-3 h-3 text-rose-600" />
+                          Nieobecny
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-400">
+                          Brak decyzji
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="py-4 text-right">
                       <Button
@@ -417,6 +472,94 @@ export default function PlayerEventsPage() {
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Opis wydarzenia</span>
                 <div className="bg-emerald-50/20 border border-emerald-50/40 p-4 rounded-xl text-sm text-gray-700 leading-relaxed min-h-[80px]">
                   {eventDetails.description ? eventDetails.description : "Brak dodatkowego opisu dla tego wydarzenia."}
+                </div>
+              </div>
+
+              {/* Attendance management section */}
+              <div className="border-t border-gray-100 pt-6 space-y-4">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block font-semibold text-gray-500">Twoja obecność</span>
+                
+                {/* Visual indicator of currently saved attendance status */}
+                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500">Status deklaracji:</span>
+                    {eventDetails.attendance_status === "obecny" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-3 py-1 text-xs font-extrabold text-green-700 shadow-sm shadow-green-50/30">
+                        <Check className="w-3.5 h-3.5" />
+                        Zgłoszono obecność
+                      </span>
+                    ) : eventDetails.attendance_status === "nieobecny" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-100 px-3 py-1 text-xs font-extrabold text-rose-700 shadow-sm shadow-rose-50/30">
+                        <X className="w-3.5 h-3.5" />
+                        Zgłoszono nieobecność
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500">
+                        Brak odpowiedzi
+                      </span>
+                    )}
+                  </div>
+
+                  {eventDetails.attendance_responded_at && (
+                    <div className="text-[11px] text-gray-400 font-medium">
+                      Ostatnia odpowiedź: {new Date(eventDetails.attendance_responded_at).toLocaleString("pl-PL")}
+                    </div>
+                  )}
+                </div>
+
+                {/* Form controls to change attendance */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceStatusInput("obecny")}
+                      className={`flex items-center justify-center gap-2 h-11 px-4 text-xs font-bold rounded-xl border transition-all ${
+                        attendanceStatusInput === "obecny"
+                          ? "bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      Będę obecny
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceStatusInput("nieobecny")}
+                      className={`flex items-center justify-center gap-2 h-11 px-4 text-xs font-bold rounded-xl border transition-all ${
+                        attendanceStatusInput === "nieobecny"
+                          ? "bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-600/20"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <X className="w-4 h-4" />
+                      Zgłoś nieobecność
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-500">Notatka / powód (opcjonalnie):</label>
+                    <textarea
+                      placeholder={attendanceStatusInput === "nieobecny" ? "Wpisz powód nieobecności (np. choroba, wyjazd)..." : "Wpisz opcjonalną wiadomość dla trenera..."}
+                      value={attendanceNoteInput}
+                      onChange={(e) => setAttendanceNoteInput(e.target.value)}
+                      className="w-full min-h-[70px] p-3 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none resize-none"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSaveAttendance}
+                    disabled={submittingAttendance || !attendanceStatusInput}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-600/10"
+                  >
+                    {submittingAttendance ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        Zapisywanie...
+                      </>
+                    ) : (
+                      "Zapisz moją decyzję"
+                    )}
+                  </Button>
                 </div>
               </div>
 
