@@ -214,6 +214,9 @@ class DatabaseSeeder extends Seeder
                 'notes' => 'Wykonuj zadania taktyczne',
             ]);
         }
+
+        // 12. Player Attendance Seeder
+        $this->call(PlayerAttendanceSeeder::class);
     }
 
     /**
