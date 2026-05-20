@@ -78,5 +78,6 @@ Route::middleware('auth:sanctum')->group(function () {
         });
         Route::get('/events', [EventController::class, 'playerIndex']);
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
+        Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
     });
 });

@@ -278,7 +278,15 @@ class EventController extends Controller
             return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
         }
 
-        return $this->getEvent($id);
+        $event = $this->baseEventQuery($user->id)
+            ->where('training_sessions.id', $id)
+            ->first();
+
+        if (!$event) {
+            return response()->json(['message' => 'Event not found.'], 404);
+        }
+
+        return response()->json(['event' => $event], 200);
     }
 
     // -------------------------------------------------------------------------
@@ -463,19 +471,32 @@ class EventController extends Controller
         ]);
     }
 
-    private function baseEventQuery()
+    private function baseEventQuery(?string $playerId = null)
     {
-        return DB::table('training_sessions')
+        $query = DB::table('training_sessions')
             ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by')
-            ->select([
-                'training_sessions.*',
-                'teams.name as team_name',
-                'users.first_name as coach_first_name',
-                'users.last_name as coach_last_name',
-                'users.email as coach_email',
-                'users.role as coach_role',
-            ]);
+            ->join('users', 'users.id', '=', 'training_sessions.created_by');
+
+        $selects = [
+            'training_sessions.*',
+            'teams.name as team_name',
+            'users.first_name as coach_first_name',
+            'users.last_name as coach_last_name',
+            'users.email as coach_email',
+            'users.role as coach_role',
+        ];
+
+        if ($playerId !== null) {
+            $query->leftJoin('attendance', function ($join) use ($playerId) {
+                $join->on('attendance.training_id', '=', 'training_sessions.id')
+                     ->where('attendance.user_id', '=', $playerId);
+            });
+            $selects[] = 'attendance.status as attendance_status';
+            $selects[] = 'attendance.note as attendance_note';
+            $selects[] = 'attendance.responded_at as attendance_responded_at';
+        }
+
+        return $query->select($selects);
     }
 
     private function findEventById(string $id)
@@ -522,7 +543,7 @@ class EventController extends Controller
         ];
         $sortColumn = $sortColumns[$sortBy] ?? $sortColumns['created_at'];
 
-        $baseQuery = $this->baseEventQuery()
+        $baseQuery = $this->baseEventQuery($request->user()->id)
             ->whereIn('training_sessions.team_id', $teamIds);
 
         if (!empty($eventType) && in_array($eventType, self::EVENT_TYPES, true)) {
@@ -573,4 +594,76 @@ class EventController extends Controller
             ->where('status', 'approved')
             ->exists();
     }
+
+    #[OA\Post(
+        path: '/api/player/events/{id}/attendance',
+        summary: 'Deklaruj obecność w wydarzeniu (zawodnik)',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['status'],
+                properties: [
+                    new OA\Property(property: 'status', type: 'string', enum: ['obecny', 'nieobecny']),
+                    new OA\Property(property: 'note', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Zadeklarowano obecność'),
+            new OA\Response(response: 403, description: 'Brak uprawnień'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+        ]
+    )]
+    public function playerDeclareAttendance(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->playerCanViewEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:obecny,nieobecny'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $existing = DB::table('attendance')
+            ->where('training_id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing) {
+            DB::table('attendance')
+                ->where('id', $existing->id)
+                ->update([
+                    'status' => $validated['status'],
+                    'note' => $validated['note'] ?? null,
+                    'responded_at' => now(),
+                ]);
+        } else {
+            DB::table('attendance')->insert([
+                'id' => (string) Str::uuid(),
+                'training_id' => $id,
+                'user_id' => $user->id,
+                'status' => $validated['status'],
+                'note' => $validated['note'] ?? null,
+                'responded_at' => now(),
+            ]);
+        }
+
+        // Return updated event with attendance
+        $event = $this->baseEventQuery($user->id)
+            ->where('training_sessions.id', $id)
+            ->first();
+
+        return response()->json([
+            'message' => 'Zadeklarowano obecność pomyślnie.',
+            'event' => $event,
+        ], 200);
+    }
 }
+
