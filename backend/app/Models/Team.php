@@ -17,7 +17,20 @@ class Team extends Model
         'name',
         'description',
         'coach_id',
+        'logo_path',
     ];
+
+    protected $appends = [
+        'logo_url',
+    ];
+
+    /**
+     * Get the logo URL attribute.
+     */
+    public function getLogoUrlAttribute(): string
+    {
+        return url("/api/teams/{$this->id}/logo");
+    }
 
     /**
      * Get the coach associated with the team.
