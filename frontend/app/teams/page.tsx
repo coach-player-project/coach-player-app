@@ -29,6 +29,7 @@ interface Team {
   description: string | null;
   created_at: string;
   coach: Coach | null;
+  logo_url?: string;
 }
 
 interface MetaPagination {
@@ -196,8 +197,16 @@ export default function TeamsPage() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] group-hover:bg-indigo-400/20 transition-all duration-500" />
 
                   <div className="relative flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-inner">
-                      <Trophy className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-slate-900 flex items-center justify-center shadow-inner group-hover:border-indigo-500/30 transition-all duration-300">
+                      <img
+                        src={team.logo_url}
+                        alt={team.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback if logo fails to load (e.g. invalid img src)
+                          e.currentTarget.style.opacity = '0';
+                        }}
+                      />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">

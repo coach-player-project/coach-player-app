@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, buildApiUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +26,7 @@ type TeamItem = {
   description: string | null;
   coach_id: string;
   created_at: string;
+  logo_url?: string;
   coach?: {
     id: string;
     first_name: string;
@@ -80,6 +81,10 @@ export default function AdminTeamsPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TeamFormState>(initialForm);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
 
   const isEditing = Boolean(editingId);
 
@@ -148,6 +153,10 @@ export default function AdminTeamsPage() {
       coach_id: coaches[0]?.id ?? "",
     });
     setEditingId(null);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setExistingLogoUrl(null);
+    setRemoveLogo(false);
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -156,26 +165,52 @@ export default function AdminTeamsPage() {
     setError(null);
     setMessage(null);
 
-    const payload = {
-      name: form.name.trim(),
-      description: form.description.trim() || null,
-      coach_id: form.coach_id.trim(),
-    };
-
     try {
-      if (isEditing && editingId) {
-        await apiFetch(`/admin/teams/${editingId}`, {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const url = buildApiUrl(isEditing ? `/admin/teams/${editingId}` : "/admin/teams");
+
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("description", form.description.trim());
+      formData.append("coach_id", form.coach_id.trim());
+
+      if (logoFile) {
+        formData.append("logo", logoFile);
+      }
+
+      if (isEditing) {
+        formData.append("_method", "PUT");
+        if (removeLogo) {
+          formData.append("remove_logo", "1");
+        }
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        let errorMsg = `HTTP ${res.status}`;
+        if (errorData?.errors) {
+          errorMsg = Object.values(errorData.errors as Record<string, string[]>).flat().join(' ');
+        } else if (errorData?.message) {
+          errorMsg = errorData.message;
+        }
+        throw new Error(errorMsg);
+      }
+
+      if (isEditing) {
         setMessage("Drużyna została zaktualizowana.");
       } else {
-        await apiFetch("/admin/teams", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
         setMessage("Drużyna została utworzona.");
       }
+
       resetForm();
       await loadTeams();
     } catch (err) {
@@ -192,6 +227,10 @@ export default function AdminTeamsPage() {
       description: team.description ?? "",
       coach_id: team.coach_id ?? "",
     });
+    setExistingLogoUrl(team.logo_url ?? null);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setRemoveLogo(false);
     setMessage(null);
     setError(null);
   }
@@ -253,6 +292,55 @@ export default function AdminTeamsPage() {
             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
           />
 
+          <div className="md:col-span-2 flex flex-col gap-2 mt-1">
+            <label className="text-sm font-semibold text-black">Herb / Logo drużyny</label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-dashed border-input bg-muted/5 w-full">
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border bg-slate-900 flex items-center justify-center shadow-inner shrink-0">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Podgląd nowego logo" className="w-full h-full object-cover" />
+                ) : existingLogoUrl && !removeLogo ? (
+                  <img src={existingLogoUrl} alt="Obecne logo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] text-muted-foreground text-center px-1">Brak logo</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5 flex-grow w-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setLogoFile(file);
+                    setRemoveLogo(false);
+                    if (file) {
+                      setLogoPreview(URL.createObjectURL(file));
+                    } else {
+                      setLogoPreview(null);
+                    }
+                  }}
+                  className="text-xs file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-input file:text-xs file:font-semibold file:bg-background file:text-foreground hover:file:bg-accent cursor-pointer"
+                />
+                <span className="text-[11px] text-muted-foreground">Maksymalnie 2MB. Akceptowane formaty: JPG, PNG, SVG, GIF.</span>
+                {existingLogoUrl && !removeLogo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogoFile(null);
+                      setLogoPreview(null);
+                      setRemoveLogo(true);
+                    }}
+                    className="text-xs text-red-600 font-medium hover:text-red-700 self-start mt-1"
+                  >
+                    Usuń obecne logo
+                  </button>
+                )}
+                {removeLogo && (
+                  <span className="text-xs text-red-600 font-semibold mt-1">Obecne logo zostanie usunięte po zapisaniu.</span>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="md:col-span-2 flex gap-2">
             <Button type="submit" disabled={submitting || coaches.length === 0}>
               {submitting ? "Zapisywanie..." : isEditing ? "Zapisz zmiany" : "Dodaj drużynę"}
@@ -300,6 +388,7 @@ export default function AdminTeamsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">Herb</TableHead>
               <TableHead>Nazwa</TableHead>
               <TableHead>Trener</TableHead>
               <TableHead>Opis</TableHead>
@@ -310,15 +399,24 @@ export default function AdminTeamsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5}>Ładowanie...</TableCell>
+                <TableCell colSpan={6}>Ładowanie...</TableCell>
               </TableRow>
             ) : teams.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}>Brak drużyn.</TableCell>
+                <TableCell colSpan={6}>Brak drużyn.</TableCell>
               </TableRow>
             ) : (
               teams.map((team) => (
                 <TableRow key={team.id}>
+                  <TableCell>
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-border bg-slate-900 flex items-center justify-center shadow-inner">
+                      {team.logo_url ? (
+                        <img src={team.logo_url} alt={team.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground text-center">Brak</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{team.name}</TableCell>
                   <TableCell>{fullCoachName(team.coach)}</TableCell>
                   <TableCell>{team.description || "-"}</TableCell>

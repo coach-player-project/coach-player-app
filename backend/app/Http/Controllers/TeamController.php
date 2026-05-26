@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 
 class TeamController extends Controller
@@ -122,6 +123,7 @@ class TeamController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'coach_id' => ['required', 'uuid', 'exists:users,id'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
         $coach = User::query()
@@ -131,6 +133,11 @@ class TeamController extends Controller
 
         if (!$coach) {
             return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
+        }
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('teams/logos', 'public');
+            $validatedData['logo_path'] = $path;
         }
 
         $team = Team::query()->create($validatedData);
@@ -226,6 +233,7 @@ class TeamController extends Controller
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'coach_id' => ['sometimes', 'required', 'uuid', 'exists:users,id'],
+            'logo' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
         if (array_key_exists('coach_id', $validatedData)) {
@@ -237,6 +245,21 @@ class TeamController extends Controller
             if (!$coach) {
                 return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
             }
+        }
+
+        if ($request->hasFile('logo')) {
+            if ($team->logo_path) {
+                Storage::disk('public')->delete($team->logo_path);
+            }
+            $path = $request->file('logo')->store('teams/logos', 'public');
+            $validatedData['logo_path'] = $path;
+        }
+
+        if ($request->input('remove_logo') == true) {
+            if ($team->logo_path) {
+                Storage::disk('public')->delete($team->logo_path);
+            }
+            $validatedData['logo_path'] = null;
         }
 
         $team->update($validatedData);
@@ -273,10 +296,16 @@ class TeamController extends Controller
     )]
     public function destroy(string $id)
     {
-        $deleted = Team::query()->where('id', $id)->delete();
-        if ($deleted === 0) {
+        $team = Team::query()->find($id);
+        if (!$team) {
             return response()->json(['message' => 'Team not found.'], 404);
         }
+
+        if ($team->logo_path) {
+            Storage::disk('public')->delete($team->logo_path);
+        }
+
+        $team->delete();
 
         return response()->json(['message' => 'Team deleted successfully.'], 200);
     }
@@ -339,5 +368,160 @@ class TeamController extends Controller
         $teams = $query->paginate($perPage > 0 ? $perPage : 100);
 
         return response()->json($teams);
+    }
+
+    /**
+     * Get the team's logo. Generates SVG logo dynamically if none is uploaded.
+     */
+    public function logo(string $id)
+    {
+        $team = Team::query()->find($id);
+
+        // If team has logo_path and it exists on public disk
+        if ($team && $team->logo_path && Storage::disk('public')->exists($team->logo_path)) {
+            $file = Storage::disk('public')->get($team->logo_path);
+            $mime = Storage::disk('public')->mimeType($team->logo_path);
+            return response($file, 200)
+                ->header('Content-Type', $mime)
+                ->header('Cache-Control', 'public, max-age=60'); // short cache to allow updates
+        }
+
+        // Generate beautiful dynamic SVG logo
+        $name = $team ? $team->name : 'Drużyna';
+        $svg = $this->generateSvgLogo($name, $id);
+
+        return response($svg, 200)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Cache-Control', 'public, max-age=86400');
+    }
+
+    /**
+     * Helper to generate a beautiful, dynamic SVG crest for a team.
+     */
+    private function generateSvgLogo(string $name, string $id): string
+    {
+        // Deterministic seeding based on ID hash
+        $hashNum = hexdec(substr(md5($id), 0, 8));
+
+        // 1. Gradients
+        $gradients = [
+            // 0: Crimson Red & Rose Orange
+            ['#e11d48', '#f97316'],
+            // 1: Royal Blue & Bright Cyan
+            ['#1d4ed8', '#06b6d4'],
+            // 2: Deep Emerald & Gold Yellow
+            ['#047857', '#eab308'],
+            // 3: Electric Indigo & Violet Purple
+            ['#4f46e5', '#a855f7'],
+            // 4: Sleek Charcoal & Silver Gray
+            ['#1f2937', '#6b7280'],
+            // 5: Midnight Teal & Mint Green
+            ['#0f766e', '#2dd4bf'],
+        ];
+        $grad = $gradients[$hashNum % count($gradients)];
+
+        // 2. Crest Shape Path
+        $shapeNum = hexdec(substr(md5($name), 0, 8)) % 3;
+        if ($shapeNum === 0) {
+            // Shield
+            $bgPath = '<path d="M 60,10 C 85,10 105,15 105,45 C 105,80 80,105 60,115 C 40,105 15,80 15,45 C 15,15 35,10 60,10 Z" fill="url(#grad-'.$id.')" filter="url(#shadow)" />';
+            $borderPath = '<path d="M 60,10 C 85,10 105,15 105,45 C 105,80 80,105 60,115 C 40,105 15,80 15,45 C 15,15 35,10 60,10 Z" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" transform="scale(0.88)" transform-origin="60 60" />';
+            $clipPath = '<clipPath id="clip-'.$id.'"><path d="M 60,10 C 85,10 105,15 105,45 C 105,80 80,105 60,115 C 40,105 15,80 15,45 C 15,15 35,10 60,10 Z" transform="scale(0.88)" transform-origin="60 60" /></clipPath>';
+        } elseif ($shapeNum === 1) {
+            // Hexagon
+            $bgPath = '<path d="M 60,10 L 105,35 L 105,85 L 60,110 L 15,85 L 15,35 Z" fill="url(#grad-'.$id.')" filter="url(#shadow)" />';
+            $borderPath = '<path d="M 60,10 L 105,35 L 105,85 L 60,110 L 15,85 L 15,35 Z" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" transform="scale(0.88)" transform-origin="60 60" />';
+            $clipPath = '<clipPath id="clip-'.$id.'"><path d="M 60,10 L 105,35 L 105,85 L 60,110 L 15,85 L 15,35 Z" transform="scale(0.88)" transform-origin="60 60" /></clipPath>';
+        } else {
+            // Circle
+            $bgPath = '<circle cx="60" cy="60" r="50" fill="url(#grad-'.$id.')" filter="url(#shadow)" />';
+            $borderPath = '<circle cx="60" cy="60" r="44" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" />';
+            $clipPath = '<clipPath id="clip-'.$id.'"><circle cx="60" cy="60" r="44" /></clipPath>';
+        }
+
+        // 3. Initials Extraction
+        $words = preg_split('/[\s-]+/', trim($name));
+        $initials = '';
+        if (count($words) >= 2) {
+            foreach (array_slice($words, 0, 3) as $w) {
+                if (!empty($w)) {
+                    $initials .= mb_substr($w, 0, 1);
+                }
+            }
+        } else {
+            $initials = mb_substr($name, 0, min(3, mb_strlen($name)));
+        }
+        $initials = mb_strtoupper($initials);
+
+        // Dynamic Font Size based on Initials Length
+        $fontSize = 34;
+        if (mb_strlen($initials) === 1) {
+            $fontSize = 44;
+        } elseif (mb_strlen($initials) === 2) {
+            $fontSize = 38;
+        } elseif (mb_strlen($initials) >= 3) {
+            $fontSize = 30;
+        }
+
+        // Decorative stripes/sash selection
+        $stripeNum = $hashNum % 3;
+        $stripes = '';
+        if ($stripeNum === 0) {
+            // Elegant diagonal sash
+            $stripes = '<path d="M-20,100 L140,-20 L140,5 L-20,125 Z" fill="rgba(255,255,255,0.06)" />
+                        <path d="M-20,115 L140,-5 L140,20 L-20,140 Z" fill="rgba(255,255,255,0.03)" />';
+        } elseif ($stripeNum === 1) {
+            // Elegant vertical stripe
+            $stripes = '<rect x="52" y="-10" width="16" height="140" fill="rgba(255,255,255,0.05)" />
+                        <rect x="56" y="-10" width="8" height="140" fill="rgba(255,255,255,0.03)" />';
+        } else {
+            // Elegant horizontal stripe
+            $stripes = '<rect x="-10" y="52" width="140" height="16" fill="rgba(255,255,255,0.05)" />
+                        <rect x="-10" y="56" width="140" height="8" fill="rgba(255,255,255,0.03)" />';
+        }
+
+        // Output SVG string
+        return <<<SVG
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="grad-{$id}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="{$grad[0]}" />
+      <stop offset="100%" stop-color="{$grad[1]}" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    {$clipPath}
+  </defs>
+
+  <!-- Crest Shape Background -->
+  {$bgPath}
+
+  <!-- Stripes inside the crest (masked) -->
+  <g clip-path="url(#clip-{$id})">
+    {$stripes}
+  </g>
+
+  <!-- Inner Border -->
+  {$borderPath}
+
+  <!-- Decorative Stars at the top -->
+  <g fill="#fbbf24" stroke="none">
+    <!-- Star 1 -->
+    <path d="M 45,35 L 46.5,38.5 L 50,38.5 L 47.2,40.8 L 48.3,44.3 L 45,42.1 L 41.7,44.3 L 42.8,40.8 L 40,38.5 L 43.5,38.5 Z" opacity="0.85" />
+    <!-- Star 2 (Middle, slightly larger and higher) -->
+    <path d="M 60,28 L 61.8,32.2 L 66,32.2 L 62.6,35 L 63.9,39.2 L 60,36.6 L 56.1,39.2 L 57.4,35 L 54,32.2 L 58.2,32.2 Z" />
+    <!-- Star 3 -->
+    <path d="M 75,35 L 76.5,38.5 L 80,38.5 L 77.2,40.8 L 78.3,44.3 L 75,42.1 L 71.7,44.3 L 72.8,40.8 L 70,38.5 L 73.5,38.5 Z" opacity="0.85" />
+  </g>
+
+  <!-- Initials Text -->
+  <text x="60" y="70" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="{$fontSize}" fill="#ffffff" text-anchor="middle" dominant-baseline="central" letter-spacing="-0.5">{$initials}</text>
+
+  <!-- Decorative Bottom Arch -->
+  <path d="M 45,88 Q 60,94 75,88" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" />
+</svg>
+SVG;
     }
 }

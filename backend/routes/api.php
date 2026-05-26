@@ -8,6 +8,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
 
 Route::get('/teams', [TeamController::class, 'index']);
+Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
 
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
