@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\TacticController;
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
@@ -68,6 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'coachShow']);
         Route::put('/events/{id}', [EventController::class, 'coachUpdate']);
         Route::delete('/events/{id}', [EventController::class, 'coachDestroy']);
+
+        // Taktyki meczowe
+        Route::get('/tactics', [TacticController::class, 'coachIndex']);
+        Route::post('/tactics', [TacticController::class, 'coachStore']);
+        Route::get('/tactics/{id}', [TacticController::class, 'coachShow']);
+        Route::put('/tactics/{id}', [TacticController::class, 'coachUpdate']);
+        Route::delete('/tactics/{id}', [TacticController::class, 'coachDestroy']);
     });
 
     // -----------------------------------------------------
