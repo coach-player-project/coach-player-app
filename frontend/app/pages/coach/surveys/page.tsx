@@ -167,6 +167,7 @@ export default function CoachSurveysPage() {
             size="icon"
             onClick={() => void load()}
             title="Odśwież"
+            className="border-gray-200 bg-white hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -274,6 +275,7 @@ export default function CoachSurveysPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline" size="sm"
+                className="border-gray-200 bg-white hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors"
                 disabled={meta.current_page <= 1 || loading}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
               >
@@ -281,6 +283,7 @@ export default function CoachSurveysPage() {
               </Button>
               <Button
                 variant="outline" size="sm"
+                className="border-gray-200 bg-white hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors"
                 disabled={meta.current_page >= meta.last_page || loading}
                 onClick={() => setPage(p => p + 1)}
               >
