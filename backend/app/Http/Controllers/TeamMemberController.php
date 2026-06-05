@@ -76,8 +76,7 @@ class TeamMemberController extends Controller
         $member->load(['team:id,name', 'user:id,first_name,last_name,email,role']);
 
         if ($member->user && $member->user->role === 'coach') {
-            \Illuminate\Support\Facades\DB::table('teams')
-                ->where('id', $member->team_id)
+            \App\Models\Team::where('id', $member->team_id)
                 ->update(['coach_id' => $member->user_id]);
         }
 

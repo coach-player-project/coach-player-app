@@ -1,6 +1,6 @@
 "use client"
 
-import { Users, Settings, LayoutDashboard, CalendarDays, Shield, UserCheck } from "lucide-react"
+import { Users, Settings, LayoutDashboard, CalendarDays, Shield, UserCheck, Activity } from "lucide-react"
 
 import {
   Sidebar,
@@ -40,6 +40,11 @@ const items = [
     title: "Zgłoszenia do drużyn",
     url: "/pages/admin/memberships",
     icon: UserCheck,
+  },
+  {
+    title: "Oceny zmęczenia",
+    url: "/pages/admin/fatigue-ratings",
+    icon: Activity,
   },
   {
     title: "Moje dane",

@@ -63,4 +63,52 @@ class AdminController extends Controller
             ]
         ], 200);
     }
+
+    #[OA\Get(
+        path: '/api/admin/users',
+        summary: 'Lista użytkowników (admin)',
+        description: 'Zwraca listę wszystkich użytkowników z możliwością filtrowania po roli, wyszukiwania i paginacji.',
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'role', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['admin', 'coach', 'player'])),
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 10)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista użytkowników pobrana pomyślnie')
+        ]
+    )]
+    public function index(Request $request)
+    {
+        $role = $request->input('role');
+        $search = $request->input('search');
+        $perPage = max(1, (int) $request->input('per_page', 10));
+
+        $query = User::query();
+
+        if (!empty($role)) {
+            $query->where('role', $role);
+        }
+
+        if (!empty($search)) {
+            $searchLike = '%' . $search . '%';
+            $query->where(function ($q) use ($searchLike) {
+                $q->where('first_name', 'like', $searchLike)
+                  ->orWhere('last_name', 'like', $searchLike)
+                  ->orWhere('email', 'like', $searchLike);
+            });
+        }
+
+        $paginated = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $paginated->items(),
+            'total' => $paginated->total(),
+            'per_page' => $paginated->perPage(),
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+        ], 200);
+    }
 }
+
