@@ -52,12 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/team-members/{id}/approve', [\App\Http\Controllers\TeamMemberController::class, 'approve']);
         Route::post('/team-members/{id}/reject', [\App\Http\Controllers\TeamMemberController::class, 'reject']);
 
-        // Zarządzanie ocenami zmęczenia (CRUD)
-        Route::get('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'index']);
-        Route::post('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'store']);
-        Route::get('/fatigue-ratings/{id}', [\App\Http\Controllers\FatigueRatingController::class, 'show']);
-        Route::put('/fatigue-ratings/{id}', [\App\Http\Controllers\FatigueRatingController::class, 'update']);
-        Route::delete('/fatigue-ratings/{id}', [\App\Http\Controllers\FatigueRatingController::class, 'destroy']);
+
 
         // Pobieranie listy użytkowników
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'index']);
