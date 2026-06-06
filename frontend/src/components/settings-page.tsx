@@ -17,11 +17,15 @@ export function SettingsPage() {
     password: ''
   })
 
+  const [userRole, setUserRole] = useState<string>('')
+  const [teams, setTeams] = useState<any[]>([])
+
   useEffect(() => {
     async function loadData() {
       try {
-        const user = await apiFetch('/user')
+        const user = await apiFetch('/user') as any
         if (user) {
+          setUserRole(user.role || '')
           setFormData({
             first_name: user.first_name || '',
             last_name: user.last_name || '',
@@ -29,6 +33,9 @@ export function SettingsPage() {
             phone: user.phone || '',
             password: ''
           })
+          if (user.team_memberships) {
+            setTeams(user.team_memberships.map((m: any) => m.team).filter(Boolean))
+          }
         }
       } catch (err) {
         setMessage({ type: 'error', text: 'Nie udało się pobrać danych użytkownika.' })
@@ -134,6 +141,25 @@ export function SettingsPage() {
               </div>
             </div>
           </div>
+
+          {userRole === 'player' && (
+            <div className="space-y-4 border-b border-gray-100 pb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Moje kluby / drużyny</h3>
+              <div className="space-y-2">
+                {teams.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {teams.map((team: any) => (
+                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                        {team.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Nie należysz obecnie do żadnego zatwierdzonego klubu.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Bezpieczeństwo</h3>

@@ -20,7 +20,13 @@ Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
-        return clone $request->user();
+        $user = $request->user();
+        if ($user->role === 'player') {
+            $user->load(['teamMemberships' => function ($q) {
+                $q->where('status', 'approved')->with('team');
+            }]);
+        }
+        return response()->json($user);
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
