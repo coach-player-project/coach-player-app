@@ -33,8 +33,10 @@ export function SettingsPage() {
             phone: user.phone || '',
             password: ''
           })
-          if (user.team_memberships) {
+          if (user.role === 'player' && user.team_memberships) {
             setTeams(user.team_memberships.map((m: any) => m.team).filter(Boolean))
+          } else if (user.role === 'coach' && user.coached_teams) {
+            setTeams(user.coached_teams)
           }
         }
       } catch (err) {
@@ -156,6 +158,25 @@ export function SettingsPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 italic">Nie należysz obecnie do żadnego zatwierdzonego klubu.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {userRole === 'coach' && (
+            <div className="space-y-4 border-b border-gray-100 pb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Prowadzone drużyny</h3>
+              <div className="space-y-2">
+                {teams.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {teams.map((team: any) => (
+                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {team.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Nie masz przypisanych żadnych prowadzonych drużyn.</p>
                 )}
               </div>
             </div>

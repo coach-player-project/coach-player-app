@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
             $user->load(['teamMemberships' => function ($q) {
                 $q->where('status', 'approved')->with('team');
             }]);
+        } elseif ($user->role === 'coach') {
+            $user->load('coachedTeams');
         }
         return response()->json($user);
     });
