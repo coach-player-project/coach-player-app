@@ -51,6 +51,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/team-members', [\App\Http\Controllers\TeamMemberController::class, 'index']);
         Route::post('/team-members/{id}/approve', [\App\Http\Controllers\TeamMemberController::class, 'approve']);
         Route::post('/team-members/{id}/reject', [\App\Http\Controllers\TeamMemberController::class, 'reject']);
+
+
+
+        // Pobieranie listy użytkowników
+        Route::get('/users', [\App\Http\Controllers\AdminController::class, 'index']);
     });
 
 
@@ -68,6 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'coachShow']);
         Route::put('/events/{id}', [EventController::class, 'coachUpdate']);
         Route::delete('/events/{id}', [EventController::class, 'coachDestroy']);
+
+        // Ankiety zmęczenia zawodników trenera (tylko odczyt)
+        Route::get('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'coachIndex']);
     });
 
     // -----------------------------------------------------

@@ -96,4 +96,15 @@ class User extends Authenticatable
     {
         return $this->role === 'player';
     }
+
+    public function fatigueRatings()
+    {
+        return $this->hasMany(FatigueRating::class, 'user_id');
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'user_id');
+    }
 }
+

@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
+use App\Models\TrainingSession;
+use App\Models\Attendance;
+use App\Models\TeamMember;
+use App\Models\Team;
 
 class EventController extends Controller
 {
@@ -236,8 +240,7 @@ class EventController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $teamIds = DB::table('team_members')
-            ->where('user_id', $user->id)
+        $teamIds = TeamMember::where('user_id', $user->id)
             ->where('status', 'approved')
             ->pluck('team_id')
             ->toArray();
@@ -371,10 +374,7 @@ class EventController extends Controller
             return $validatedData;
         }
 
-        $id = (string) Str::uuid();
-
-        DB::table('training_sessions')->insert([
-            'id' => $id,
+        $event = TrainingSession::create([
             'team_id' => $validatedData['team_id'],
             'created_by' => $user->id,
             'event_type' => $validatedData['event_type'],
@@ -384,8 +384,8 @@ class EventController extends Controller
             'duration_minutes' => $validatedData['duration_minutes'],
             'canvas_data' => $validatedData['canvas_data'] ?? null,
             'google_event_id' => $validatedData['google_event_id'] ?? null,
-            'created_at' => now(),
         ]);
+        $id = $event->id;
 
         $event = $this->findEventById($id);
 
@@ -408,8 +408,8 @@ class EventController extends Controller
 
     private function updateEvent(Request $request, $id, ?array $prevalidated = null)
     {
-        $exists = DB::table('training_sessions')->where('id', $id)->exists();
-        if (!$exists) {
+        $eventModel = TrainingSession::find($id);
+        if (!$eventModel) {
             return response()->json(['message' => 'Event not found.'], 404);
         }
 
@@ -422,9 +422,7 @@ class EventController extends Controller
             return response()->json(['message' => 'No valid fields to update.'], 422);
         }
 
-        DB::table('training_sessions')
-            ->where('id', $id)
-            ->update($validatedData);
+        $eventModel->update($validatedData);
 
         $event = $this->findEventById($id);
 
@@ -436,10 +434,12 @@ class EventController extends Controller
 
     private function deleteEvent($id)
     {
-        $deleted = DB::table('training_sessions')->where('id', $id)->delete();
-        if ($deleted === 0) {
+        $eventModel = TrainingSession::find($id);
+        if (!$eventModel) {
             return response()->json(['message' => 'Event not found.'], 404);
         }
+
+        $eventModel->delete();
 
         return response()->json(['message' => 'Event deleted successfully.'], 200);
     }
@@ -473,8 +473,7 @@ class EventController extends Controller
 
     private function baseEventQuery(?string $playerId = null)
     {
-        $query = DB::table('training_sessions')
-            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
+        $query = TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
             ->join('users', 'users.id', '=', 'training_sessions.created_by');
 
         $selects = [
@@ -508,16 +507,14 @@ class EventController extends Controller
 
     private function coachOwnsTeam(string $coachId, string $teamId): bool
     {
-        return DB::table('teams')
-            ->where('id', $teamId)
+        return Team::where('id', $teamId)
             ->where('coach_id', $coachId)
             ->exists();
     }
 
     private function coachOwnsEvent(string $coachId, string $eventId): bool
     {
-        return DB::table('training_sessions')
-            ->join('teams', 'teams.id', '=', 'training_sessions.team_id')
+        return TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
             ->where('training_sessions.id', $eventId)
             ->where('teams.coach_id', $coachId)
             ->exists();
@@ -583,13 +580,12 @@ class EventController extends Controller
 
     private function playerCanViewEvent(string $userId, string $eventId): bool
     {
-        $event = DB::table('training_sessions')->where('id', $eventId)->first();
+        $event = TrainingSession::find($eventId);
         if (!$event) {
             return false;
         }
 
-        return DB::table('team_members')
-            ->where('team_id', $event->team_id)
+        return TeamMember::where('team_id', $event->team_id)
             ->where('user_id', $userId)
             ->where('status', 'approved')
             ->exists();
@@ -631,22 +627,18 @@ class EventController extends Controller
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $existing = DB::table('attendance')
-            ->where('training_id', $id)
+        $existing = Attendance::where('training_id', $id)
             ->where('user_id', $user->id)
             ->first();
 
         if ($existing) {
-            DB::table('attendance')
-                ->where('id', $existing->id)
-                ->update([
-                    'status' => $validated['status'],
-                    'note' => $validated['note'] ?? null,
-                    'responded_at' => now(),
-                ]);
+            $existing->update([
+                'status' => $validated['status'],
+                'note' => $validated['note'] ?? null,
+                'responded_at' => now(),
+            ]);
         } else {
-            DB::table('attendance')->insert([
-                'id' => (string) Str::uuid(),
+            Attendance::create([
                 'training_id' => $id,
                 'user_id' => $user->id,
                 'status' => $validated['status'],
