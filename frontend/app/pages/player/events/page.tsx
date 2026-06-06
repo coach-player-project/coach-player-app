@@ -40,6 +40,8 @@ type EventItem = {
   attendance_status?: "obecny" | "nieobecny" | null
   attendance_note?: string | null
   attendance_responded_at?: string | null
+  player_fatigue_rating?: number | null
+  player_fatigue_submitted_at?: string | null
 }
 
 type EventsResponse = {
@@ -82,13 +84,18 @@ export default function PlayerEventsPage() {
   const [attendanceStatusInput, setAttendanceStatusInput] = useState<"obecny" | "nieobecny" | null>(null)
   const [attendanceNoteInput, setAttendanceNoteInput] = useState("")
 
+  const [submittingFatigue, setSubmittingFatigue] = useState(false)
+  const [fatigueRatingInput, setFatigueRatingInput] = useState<number | null>(null)
+
   useEffect(() => {
     if (eventDetails) {
       setAttendanceStatusInput(eventDetails.attendance_status ?? null)
       setAttendanceNoteInput(eventDetails.attendance_note ?? "")
+      setFatigueRatingInput(eventDetails.player_fatigue_rating ?? null)
     } else {
       setAttendanceStatusInput(null)
       setAttendanceNoteInput("")
+      setFatigueRatingInput(null)
     }
   }, [eventDetails])
 
@@ -110,6 +117,27 @@ export default function PlayerEventsPage() {
       alert(err instanceof Error ? err.message : "Wystąpił błąd podczas zapisywania obecności.")
     } finally {
       setSubmittingAttendance(false)
+    }
+  }
+
+  async function handleSaveFatigue(rating: number) {
+    if (!selectedEventId) return
+    setSubmittingFatigue(true)
+    try {
+      const res = await apiFetch(`/player/events/${selectedEventId}/fatigue`, {
+        method: "POST",
+        body: JSON.stringify({
+          rating,
+        }),
+      }) as { event: EventItem }
+      
+      setEventDetails(res.event)
+      setItems((prev) => prev.map((item) => item.id === selectedEventId ? { ...item, ...res.event } : item))
+      setFatigueRatingInput(res.event.player_fatigue_rating ?? null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Wystąpił błąd podczas zapisywania zmęczenia.")
+    } finally {
+      setSubmittingFatigue(false)
     }
   }
 
@@ -562,6 +590,87 @@ export default function PlayerEventsPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Sekcja oceny zmęczenia (widoczna tylko dla przeszłych wydarzeń) */}
+              {new Date(eventDetails.scheduled_at) < new Date() && (
+                <div className="border-t border-gray-100 pt-6 space-y-4">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block font-semibold text-gray-500">
+                    Ocena zmęczenia po treningu
+                  </span>
+
+                  {eventDetails.player_fatigue_rating ? (
+                    <div className="bg-emerald-50/20 border border-emerald-100 p-4 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-600">Zgłoszone zmęczenie:</span>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                          eventDetails.player_fatigue_rating <= 3 
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : eventDetails.player_fatigue_rating <= 7
+                            ? "bg-amber-100 text-amber-800 border-amber-300"
+                            : "bg-rose-100 text-rose-800 border-rose-300"
+                        }`}>
+                          {eventDetails.player_fatigue_rating}/10
+                        </span>
+                      </div>
+                      {eventDetails.player_fatigue_submitted_at && (
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          Zgłoszono: {new Date(eventDetails.player_fatigue_submitted_at).toLocaleString("pl-PL")}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-500">
+                      Nie oceniłeś jeszcze swojego zmęczenia po tym wydarzeniu. Wybierz stopień od 1 do 10 poniżej.
+                    </div>
+                  )}
+
+                  {/* Wybór 1-10 */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-semibold text-gray-500 block">Wybierz stopień zmęczenia (1 - najniższe, 10 - najwyższe):</label>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => {
+                        const isSelected = fatigueRatingInput === rating;
+                        let btnStyle = "bg-white text-gray-700 border-gray-200 hover:bg-gray-50";
+                        if (isSelected) {
+                          if (rating <= 3) {
+                            btnStyle = "bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20 hover:bg-green-700";
+                          } else if (rating <= 7) {
+                            btnStyle = "bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 hover:bg-amber-650";
+                          } else {
+                            btnStyle = "bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-600/20 hover:bg-rose-700";
+                          }
+                        }
+                        return (
+                          <button
+                            key={rating}
+                            type="button"
+                            disabled={submittingFatigue}
+                            onClick={() => {
+                              setFatigueRatingInput(rating);
+                              void handleSaveFatigue(rating);
+                            }}
+                            className={`h-9 w-full rounded-lg text-xs font-bold border transition-all flex items-center justify-center ${btnStyle}`}
+                          >
+                            {rating}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="flex justify-between text-[10px] text-gray-400 font-medium px-1">
+                      <span>1 - Pełna świeżość</span>
+                      <span>10 - Skrajne wyczerpanie</span>
+                    </div>
+
+                    {submittingFatigue && (
+                      <div className="flex items-center gap-2 justify-center text-xs text-gray-500">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500" />
+                        <span>Zapisywanie oceny zmęczenia...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Coach details */}
               {(eventDetails.coach_first_name || eventDetails.coach_last_name) && (

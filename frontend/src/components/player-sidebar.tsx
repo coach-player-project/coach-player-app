@@ -42,11 +42,6 @@ const items = [
     icon: Presentation,
   },
   {
-    title: "Ankieta zmęczenia",
-    url: "/pages/player/fatigue",
-    icon: Activity,
-  },
-  {
     title: "Moje dane",
     url: "/pages/player/settings",
     icon: Settings,
