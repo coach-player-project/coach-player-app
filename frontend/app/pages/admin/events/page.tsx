@@ -297,9 +297,9 @@ export default function AdminEventsPage() {
   function renderSortIcon(field: string) {
     if (sortBy !== field) return null;
     return sortDir === "asc" ? (
-      <ChevronUp className="h-4 w-4 ml-1 inline-block text-primary" />
+      <ChevronUp className="h-4 w-4 ml-1 inline-block text-blue-600" />
     ) : (
-      <ChevronDown className="h-4 w-4 ml-1 inline-block text-primary" />
+      <ChevronDown className="h-4 w-4 ml-1 inline-block text-blue-600" />
     );
   }
 
@@ -307,32 +307,21 @@ export default function AdminEventsPage() {
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fade-in">
       
       {/* NAGŁÓWEK STRONY */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-800 to-teal-900 p-8 text-white shadow-lg border border-emerald-700/30">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl" />
-        <div className="absolute left-1/3 bottom-0 -mb-16 w-48 h-48 bg-teal-500/20 rounded-full blur-2xl" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="bg-emerald-500/30 text-emerald-300 text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-400/20">
-                Panel Administratora
-              </span>
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl flex items-center gap-2">
-              <CalendarDays className="h-9 w-9 text-emerald-400" />
-              Harmonogram Wydarzeń
-            </h1>
-            <p className="text-emerald-100/90 text-sm md:text-base max-w-xl">
-              Zarządzaj w pełni treningami, meczami, przypisanymi drużynami oraz zaawansowanymi danymi taktycznymi i kalendarzem.
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Badge className="bg-white/10 hover:bg-white/20 text-white border-white/10 px-4 py-2 text-sm backdrop-blur-sm">
-              <Sparkles className="h-4 w-4 mr-2 text-emerald-300" />
-              Łącznie: {meta.total} wydarzeń
-            </Badge>
-          </div>
+      <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950 flex items-center gap-2">
+            <CalendarDays className="h-7 w-7 text-blue-600" />
+            Harmonogram Wydarzeń
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Zarządzaj w pełni treningami, meczami, przypisanymi drużynami oraz zaawansowanymi danymi taktycznymi i kalendarzem.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-sm shadow-none font-medium">
+            <Sparkles className="h-4 w-4 mr-1.5 text-blue-600 inline" />
+            Łącznie: {meta.total} wydarzeń
+          </Badge>
         </div>
       </div>
 
@@ -341,19 +330,18 @@ export default function AdminEventsPage() {
         
         {/* KOLUMNA LEWA: FORMULARZ DODAWANIA / EDYCJI */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 md:p-8 hover:shadow-lg transition-shadow relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-emerald-600 to-teal-600" />
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6 md:p-8">
             
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-950 flex items-center gap-2">
                 {isEditing ? (
                   <>
-                    <Edit2 className="h-5 w-5 text-emerald-600 animate-pulse" />
+                    <Edit2 className="h-5 w-5 text-blue-600" />
                     Edytuj Wydarzenie
                   </>
                 ) : (
                   <>
-                    <Plus className="h-5 w-5 text-emerald-600" />
+                    <Plus className="h-5 w-5 text-blue-600" />
                     Dodaj Nowe Wydarzenie
                   </>
                 )}
@@ -361,9 +349,9 @@ export default function AdminEventsPage() {
               {isEditing && (
                 <button 
                   onClick={resetForm}
-                  className="text-gray-400 hover:text-gray-600 text-xs font-semibold flex items-center gap-1 bg-gray-50 px-2 py-1 rounded border border-gray-200"
+                  className="text-gray-500 hover:text-gray-700 text-xs font-medium flex items-center gap-1 bg-gray-100/50 px-2.5 py-1 rounded-md border border-gray-200 transition-colors"
                 >
-                  <X className="h-3 w-3" /> Anuluj edycję
+                  <X className="h-3.5 w-3.5" /> Anuluj edycję
                 </button>
               )}
             </div>
@@ -377,7 +365,7 @@ export default function AdminEventsPage() {
                     <Shield className="h-3.5 w-3.5 text-gray-400" /> Drużyna
                   </label>
                   <select
-                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 transition-colors"
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 transition-colors"
                     value={form.team_id}
                     onChange={(e) => setForm((prev) => ({ ...prev, team_id: e.target.value }))}
                     required
@@ -400,7 +388,7 @@ export default function AdminEventsPage() {
                     <Filter className="h-3.5 w-3.5 text-gray-400" /> Typ wydarzenia
                   </label>
                   <select
-                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                     value={form.event_type}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -426,7 +414,7 @@ export default function AdminEventsPage() {
                     value={form.title}
                     onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                     required
-                    className="h-10 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-sm"
+                    className="h-10 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
                   />
                 </div>
 
@@ -440,7 +428,7 @@ export default function AdminEventsPage() {
                     value={form.scheduled_at}
                     onChange={(e) => setForm((prev) => ({ ...prev, scheduled_at: e.target.value }))}
                     required
-                    className="h-10 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-sm"
+                    className="h-10 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
                   />
                 </div>
 
@@ -456,7 +444,7 @@ export default function AdminEventsPage() {
                     value={form.duration_minutes}
                     onChange={(e) => setForm((prev) => ({ ...prev, duration_minutes: e.target.value }))}
                     required
-                    className="h-10 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-sm"
+                    className="h-10 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
                   />
                 </div>
 
@@ -466,7 +454,7 @@ export default function AdminEventsPage() {
                     Szczegółowy opis wydarzenia
                   </label>
                   <textarea
-                    className="w-full min-h-[90px] rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
+                    className="w-full min-h-[90px] rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                     placeholder="Wpisz cele treningu, zbiórkę zawodników, kolor strojów lub uwagi..."
                     value={form.description}
                     onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
@@ -479,20 +467,20 @@ export default function AdminEventsPage() {
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition-colors uppercase tracking-wide"
+                  className="flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-800 transition-colors uppercase tracking-wide"
                 >
                   {showAdvanced ? "Ukryj opcje zaawansowane" : "Pokaż opcje zaawansowane"}
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
                 </button>
 
-                {showAdvanced && (
+                 {showAdvanced && (
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 border border-gray-200/60 animate-slide-down">
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-600 tracking-wide uppercase flex items-center gap-1">
-                        <FileCode className="h-3 w-3 text-emerald-600" /> Dane Taktyczne (Canvas JSON)
+                        <FileCode className="h-3 w-3 text-blue-600" /> Dane Taktyczne (Canvas JSON)
                       </label>
                       <textarea
-                        className="w-full h-20 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-900 font-mono shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        className="w-full h-20 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-900 font-mono shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         placeholder='{"formation": "4-3-3", "positions": [...]}'
                         value={form.canvas_data}
                         onChange={(e) => setForm((prev) => ({ ...prev, canvas_data: e.target.value }))}
@@ -501,13 +489,13 @@ export default function AdminEventsPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-gray-600 tracking-wide uppercase flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3 text-emerald-600" /> Identyfikator Google Calendar
+                        <CalendarDays className="h-3 w-3 text-blue-600" /> Identyfikator Google Calendar
                       </label>
                       <Input
                         placeholder="gcal_event_id_xyz"
                         value={form.google_event_id}
                         onChange={(e) => setForm((prev) => ({ ...prev, google_event_id: e.target.value }))}
-                        className="h-9 rounded-lg border-gray-200 text-xs focus:border-emerald-500 shadow-sm"
+                        className="h-9 rounded-lg border-gray-200 text-xs focus:border-blue-500 shadow-sm"
                       />
                       <p className="text-[10px] text-gray-400 mt-1">
                         Umożliwia synchronizację wydarzenia z zewnętrznym kalendarzem Google.
@@ -522,7 +510,7 @@ export default function AdminEventsPage() {
                 <Button 
                   type="submit" 
                   disabled={submitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm px-6 font-semibold flex items-center gap-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm px-6 font-semibold flex items-center gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {submitting ? "Zapisywanie..." : isEditing ? "Zapisz zmiany" : "Stwórz wydarzenie"}
@@ -540,9 +528,9 @@ export default function AdminEventsPage() {
               </div>
             </form>
 
-            {message && (
-              <div className="mt-4 p-3 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-sm flex items-center gap-2 animate-bounce-short">
-                <Sparkles className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+             {message && (
+              <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-xl border border-blue-200 text-sm flex items-center gap-2 animate-bounce-short">
+                <Sparkles className="h-4 w-4 text-blue-600 flex-shrink-0" />
                 {message}
               </div>
             )}
@@ -557,12 +545,10 @@ export default function AdminEventsPage() {
 
         {/* KOLUMNA PRAWA: DETALE WYBRANEGO WYDARZENIA */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow relative overflow-hidden h-full flex flex-col justify-between">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl" />
-            
+          <div className="bg-card rounded-xl shadow-sm border border-border p-6 h-full flex flex-col justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
-                <Info className="h-5 w-5 text-emerald-600" />
+              <h2 className="text-lg font-bold text-gray-950 flex items-center gap-2 mb-4 border-b border-border pb-3">
+                <Info className="h-5 w-5 text-blue-600" />
                 Szczegóły wydarzenia
               </h2>
 
@@ -574,7 +560,7 @@ export default function AdminEventsPage() {
                     </span>
                     <div className="flex items-center gap-2">
                       {selectedEventDetails.event_type === "training" ? (
-                        <Badge className="bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 shadow-none font-semibold flex items-center gap-1">
+                        <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-none font-semibold flex items-center gap-1">
                           <Dumbbell className="h-3 w-3" /> Trening
                         </Badge>
                       ) : (
@@ -593,7 +579,7 @@ export default function AdminEventsPage() {
                       Drużyna
                     </span>
                     <span className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-                      <Shield className="h-4 w-4 text-emerald-600" />
+                      <Shield className="h-4 w-4 text-blue-600" />
                       {selectedEventDetails.team_name ?? selectedEventDetails.team_id}
                     </span>
                   </div>
@@ -638,7 +624,7 @@ export default function AdminEventsPage() {
                         Organizator
                       </span>
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-bold">
                           {selectedEventDetails.coach_first_name[0]}{selectedEventDetails.coach_last_name?.[0] || ""}
                         </div>
                         <div>
@@ -660,7 +646,7 @@ export default function AdminEventsPage() {
                       </span>
                       
                       {selectedEventDetails.google_event_id && (
-                        <div className="flex items-center justify-between text-xs bg-emerald-50/50 p-2 rounded border border-emerald-100 text-emerald-800">
+                        <div className="flex items-center justify-between text-xs bg-blue-50/50 p-2 rounded border border-blue-100 text-blue-800">
                           <span className="font-medium">Google Event ID:</span>
                           <span className="font-mono text-[10px]">{selectedEventDetails.google_event_id}</span>
                         </div>
@@ -669,7 +655,7 @@ export default function AdminEventsPage() {
                       {selectedEventDetails.canvas_data && (
                         <div>
                           <span className="text-[10px] text-gray-500 block mb-1">Schemat taktyczny:</span>
-                          <pre className="text-[9px] font-mono bg-gray-900 text-emerald-400 p-2 rounded overflow-x-auto max-h-24">
+                          <pre className="text-[9px] font-mono bg-gray-900 text-blue-400 p-2 rounded overflow-x-auto max-h-24">
                             {selectedEventDetails.canvas_data}
                           </pre>
                         </div>
@@ -685,7 +671,7 @@ export default function AdminEventsPage() {
               )}
             </div>
 
-            <div className="text-[10px] text-gray-400 text-center border-t border-gray-100 pt-3 mt-4">
+            <div className="text-[10px] text-gray-400 text-center border-t border-border pt-3 mt-4">
               Zaktualizowano w czasie rzeczywistym z API
             </div>
           </div>
@@ -693,10 +679,10 @@ export default function AdminEventsPage() {
       </div>
 
       {/* PASEK WYSZUKIWANIA, FILTRÓW I SORTOWANIA */}
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Filter className="h-5 w-5 text-emerald-600" />
-          <h2 className="text-lg font-bold text-gray-900">Wyszukiwanie i Filtrowanie</h2>
+          <Filter className="h-5 w-5 text-blue-600" />
+          <h2 className="text-lg font-bold text-gray-950">Wyszukiwanie i Filtrowanie</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -711,14 +697,14 @@ export default function AdminEventsPage() {
                 setPage(1);
                 setSearch(e.target.value);
               }}
-              className="pl-10 h-11 rounded-xl border-gray-200 focus:border-emerald-500 shadow-sm text-sm"
+              className="pl-10 h-11 rounded-xl border-gray-200 focus:border-blue-500 shadow-sm text-sm"
             />
           </div>
 
           {/* FILTER DRUŻYNA */}
           <div>
             <select
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
               value={filterTeam}
               onChange={(e) => {
                 setPage(1);
@@ -737,7 +723,7 @@ export default function AdminEventsPage() {
           {/* FILTER TYP */}
           <div>
             <select
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
               value={filterType}
               onChange={(e) => {
                 setPage(1);
@@ -773,17 +759,17 @@ export default function AdminEventsPage() {
       </div>
 
       {/* TABELA WYDARZEŃ */}
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
           <div className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-emerald-600" />
-            <h3 className="font-bold text-gray-900">Lista Wydarzeń ({items.length} na tej stronie)</h3>
+            <CalendarDays className="h-5 w-5 text-blue-600" />
+            <h3 className="font-bold text-gray-950">Lista Wydarzeń ({items.length} na tej stronie)</h3>
           </div>
           
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
             <span>Wyników na stronę:</span>
             <select
-              className="h-8 rounded-lg border border-gray-200 px-2 bg-white outline-none focus:border-emerald-500"
+              className="h-8 rounded-lg border border-gray-200 px-2 bg-white outline-none focus:border-blue-500"
               value={perPage}
               onChange={(e) => {
                 setPage(1);
@@ -840,7 +826,7 @@ export default function AdminEventsPage() {
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-gray-500 font-medium">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-emerald-600 border-t-transparent" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent" />
                       Ładowanie wydarzeń...
                     </div>
                   </TableCell>
@@ -857,13 +843,13 @@ export default function AdminEventsPage() {
                   <TableRow 
                     key={item.id}
                     onClick={() => setSelectedEventDetails(item)}
-                    className={`transition-colors cursor-pointer hover:bg-emerald-50/20 group ${selectedEventDetails?.id === item.id ? "bg-emerald-50/40" : ""}`}
+                    className={`transition-colors cursor-pointer hover:bg-blue-50/20 group ${selectedEventDetails?.id === item.id ? "bg-blue-50/40" : ""}`}
                   >
                     
                     {/* TYP BADGE */}
                     <TableCell className="py-4">
                       {item.event_type === "training" ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
                           <Dumbbell className="h-3 w-3" /> Trening
                         </span>
                       ) : (
@@ -886,7 +872,7 @@ export default function AdminEventsPage() {
                     {/* DRUŻYNA */}
                     <TableCell className="text-gray-600 py-4">
                       <span className="flex items-center gap-1 text-sm font-medium">
-                        <Shield className="h-3.5 w-3.5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+                        <Shield className="h-3.5 w-3.5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                         {item.team_name ?? item.team_id}
                       </span>
                     </TableCell>
@@ -912,7 +898,7 @@ export default function AdminEventsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors rounded-lg font-semibold"
+                        className="h-8 border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors rounded-lg font-semibold"
                         onClick={() => onEdit(item)}
                       >
                         <Edit2 className="h-3.5 w-3.5 mr-1" />
@@ -936,7 +922,7 @@ export default function AdminEventsPage() {
         </div>
 
         {/* PAGINACJA */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-medium text-gray-500">
+        <div className="px-6 py-4 bg-muted/20 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-medium text-gray-600">
           <div className="flex items-center gap-2">
             <span>
               Strona <strong className="text-gray-900">{meta.current_page}</strong> z <strong className="text-gray-900">{meta.last_page}</strong>
@@ -953,7 +939,7 @@ export default function AdminEventsPage() {
               size="sm"
               disabled={meta.current_page <= 1 || loading}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
+              className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
             >
               Poprzednia
             </Button>
@@ -962,7 +948,7 @@ export default function AdminEventsPage() {
               size="sm"
               disabled={meta.current_page >= meta.last_page || loading}
               onClick={() => setPage((prev) => prev + 1)}
-              className="border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
+              className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
             >
               Następna
             </Button>
