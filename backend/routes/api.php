@@ -56,6 +56,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Pobieranie listy użytkowników
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'index']);
+        Route::post('/users', [\App\Http\Controllers\AdminController::class, 'store']);
+        Route::get('/users/{id}', [\App\Http\Controllers\AdminController::class, 'show']);
+        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'update']);
+        Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'destroy']);
     });
 
 

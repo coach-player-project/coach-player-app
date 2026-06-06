@@ -532,7 +532,7 @@ export default function AdminEventsPage() {
                     type="button" 
                     variant="outline" 
                     onClick={resetForm}
-                    className="border-gray-200 rounded-xl hover:bg-gray-50 font-semibold"
+                    className="border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-955 transition-colors rounded-xl font-semibold"
                   >
                     Anuluj
                   </Button>
@@ -953,7 +953,7 @@ export default function AdminEventsPage() {
               size="sm"
               disabled={meta.current_page <= 1 || loading}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="border-gray-200 rounded-lg bg-white hover:bg-gray-50 font-semibold"
+              className="border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
             >
               Poprzednia
             </Button>
@@ -962,7 +962,7 @@ export default function AdminEventsPage() {
               size="sm"
               disabled={meta.current_page >= meta.last_page || loading}
               onClick={() => setPage((prev) => prev + 1)}
-              className="border-gray-200 rounded-lg bg-white hover:bg-gray-50 font-semibold"
+              className="border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors disabled:opacity-40 disabled:pointer-events-none rounded-lg font-semibold"
             >
               Następna
             </Button>
