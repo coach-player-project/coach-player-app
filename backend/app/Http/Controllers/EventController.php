@@ -10,6 +10,7 @@ use App\Models\TrainingSession;
 use App\Models\Attendance;
 use App\Models\TeamMember;
 use App\Models\Team;
+use App\Models\FatigueRating;
 
 class EventController extends Controller
 {
@@ -493,6 +494,13 @@ class EventController extends Controller
             $selects[] = 'attendance.status as attendance_status';
             $selects[] = 'attendance.note as attendance_note';
             $selects[] = 'attendance.responded_at as attendance_responded_at';
+
+            $query->leftJoin('fatigue_ratings', function ($join) use ($playerId) {
+                $join->on('fatigue_ratings.training_id', '=', 'training_sessions.id')
+                     ->where('fatigue_ratings.user_id', '=', $playerId);
+            });
+            $selects[] = 'fatigue_ratings.rating as player_fatigue_rating';
+            $selects[] = 'fatigue_ratings.submitted_at as player_fatigue_submitted_at';
         }
 
         return $query->select($selects);
@@ -657,5 +665,69 @@ class EventController extends Controller
             'event' => $event,
         ], 200);
     }
+
+    #[OA\Post(
+        path: '/api/player/events/{id}/fatigue',
+        summary: 'Zgłoś subiektywną ocenę zmęczenia po wydarzeniu (zawodnik)',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['rating'],
+                properties: [
+                    new OA\Property(property: 'rating', type: 'integer', minimum: 1, maximum: 10)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Zgłoszono zmęczenie'),
+            new OA\Response(response: 403, description: 'Brak uprawnień'),
+            new OA\Response(response: 404, description: 'Nie znaleziono wydarzenia'),
+        ]
+    )]
+    public function playerDeclareFatigue(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->playerCanViewEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'min:1', 'max:10'],
+        ]);
+
+        $existing = FatigueRating::where('training_id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'rating' => $validated['rating'],
+                'submitted_at' => now(),
+            ]);
+        } else {
+            FatigueRating::create([
+                'training_id' => $id,
+                'user_id' => $user->id,
+                'rating' => $validated['rating'],
+                'submitted_at' => now(),
+            ]);
+        }
+
+        // Return updated event with fatigue rating and attendance
+        $event = $this->baseEventQuery($user->id)
+            ->where('training_sessions.id', $id)
+            ->first();
+
+        return response()->json([
+            'message' => 'Oceniono zmęczenie pomyślnie.',
+            'event' => $event,
+        ], 200);
+    }
 }
+
 

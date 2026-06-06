@@ -106,5 +106,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Attendance::class, 'user_id');
     }
+
+    public function teamMemberships()
+    {
+        return $this->hasMany(TeamMember::class, 'user_id');
+    }
+
+    public function coachedTeams()
+    {
+        return $this->hasMany(Team::class, 'coach_id');
+    }
 }
 

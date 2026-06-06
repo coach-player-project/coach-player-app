@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
@@ -20,7 +21,15 @@ Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
-        return clone $request->user();
+        $user = $request->user();
+        if ($user->role === 'player') {
+            $user->load(['teamMemberships' => function ($q) {
+                $q->where('status', 'approved')->with('team');
+            }]);
+        } elseif ($user->role === 'coach') {
+            $user->load('coachedTeams');
+        }
+        return response()->json($user);
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
@@ -71,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Trenerze w panelu zarządzania treningami']);
         });
+        Route::get('/dashboard/players', [DashboardController::class, 'coachPlayers']);
         Route::get('/teams', [TeamController::class, 'coachIndex']);
         Route::get('/events', [EventController::class, 'coachIndex']);
         Route::post('/events', [EventController::class, 'coachStore']);
@@ -89,8 +99,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Zawodniku w swoim prywatnym panelu wyników']);
         });
+        Route::get('/dashboard/summary', [DashboardController::class, 'playerSummary']);
         Route::get('/events', [EventController::class, 'playerIndex']);
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
         Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
+        Route::post('/events/{id}/fatigue', [EventController::class, 'playerDeclareFatigue']);
     });
 });
