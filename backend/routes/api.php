@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
@@ -79,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Trenerze w panelu zarządzania treningami']);
         });
+        Route::get('/dashboard/players', [DashboardController::class, 'coachPlayers']);
         Route::get('/teams', [TeamController::class, 'coachIndex']);
         Route::get('/events', [EventController::class, 'coachIndex']);
         Route::post('/events', [EventController::class, 'coachStore']);
@@ -97,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Zawodniku w swoim prywatnym panelu wyników']);
         });
+        Route::get('/dashboard/summary', [DashboardController::class, 'playerSummary']);
         Route::get('/events', [EventController::class, 'playerIndex']);
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
         Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
