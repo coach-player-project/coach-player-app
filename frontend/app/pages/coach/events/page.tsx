@@ -5,7 +5,8 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Search, Trophy, Dumbbell, CalendarDays } from "lucide-react";
+import { Calendar, Clock, Search, Trophy, Dumbbell, CalendarDays, Presentation } from "lucide-react";
+import { TacticalBoard } from "@/components/tactical-board";
 import {
   Table,
   TableBody,
@@ -26,6 +27,7 @@ type EventItem = {
   scheduled_at: string;
   duration_minutes: number;
   team_name?: string;
+  canvas_data?: string | null;
 };
 
 type TeamOption = {
@@ -50,6 +52,7 @@ type EventFormState = {
   description: string;
   scheduled_at: string;
   duration_minutes: string;
+  canvas_data: string;
 };
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
@@ -64,6 +67,7 @@ const initialForm: EventFormState = {
   description: "",
   scheduled_at: "",
   duration_minutes: "90",
+  canvas_data: "",
 };
 
 function toDatetimeLocal(value: string) {
@@ -104,6 +108,7 @@ export default function CoachEventsPage() {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showTacticalModal, setShowTacticalModal] = useState(false);
   const [form, setForm] = useState<EventFormState>(initialForm);
 
   const isEditing = Boolean(editingId);
@@ -184,6 +189,7 @@ export default function CoachEventsPage() {
       description: form.description.trim() || null,
       scheduled_at: toApiDatetime(form.scheduled_at),
       duration_minutes: Number(form.duration_minutes),
+      canvas_data: form.canvas_data.trim() || null,
     };
 
     try {
@@ -218,6 +224,7 @@ export default function CoachEventsPage() {
       description: item.description ?? "",
       scheduled_at: toDatetimeLocal(item.scheduled_at),
       duration_minutes: String(item.duration_minutes ?? 90),
+      canvas_data: item.canvas_data ?? "",
     });
     setMessage(null);
     setError(null);
@@ -357,6 +364,25 @@ export default function CoachEventsPage() {
             />
           </div>
 
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plan Taktyczny (opcjonalnie)</label>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Button
+                type="button"
+                onClick={() => setShowTacticalModal(true)}
+                className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl px-4 py-2 font-semibold flex items-center gap-2 text-sm"
+              >
+                <Presentation className="h-4 w-4" />
+                <span>{form.canvas_data ? "Zmień / Edytuj taktykę" : "Zaprojektuj schemat taktyczny"}</span>
+              </Button>
+              {form.canvas_data && (
+                <Badge className="bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold px-2.5 py-1 rounded-full text-xs">
+                  Tablica taktyczna została skonfigurowana
+                </Badge>
+              )}
+            </div>
+          </div>
+
           <div className="md:col-span-2 flex gap-2 pt-2">
             <Button
               type="submit"
@@ -479,7 +505,17 @@ export default function CoachEventsPage() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="py-4 font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{item.title}</TableCell>
+                    <TableCell className="py-4 font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span>{item.title}</span>
+                        {item.canvas_data && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-50 border border-indigo-150 text-indigo-700 px-2 py-0.5 rounded-full" title="Dołączono plan taktyczny">
+                            <Presentation className="w-3.5 h-3.5" />
+                            Taktyka
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="py-4 text-gray-600 font-medium">{item.team_name ?? item.team_id}</TableCell>
                     <TableCell className="py-4">
                       <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
@@ -547,6 +583,35 @@ export default function CoachEventsPage() {
           </div>
         </div>
       </div>
+
+      {showTacticalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-5xl space-y-4 my-8">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Presentation className="h-5 w-5 text-indigo-600" />
+                Taktyka dla: {form.title || "Nowe wydarzenie"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowTacticalModal(false)}
+                className="text-gray-400 hover:text-gray-600 font-semibold text-sm"
+              >
+                Zamknij
+              </button>
+            </div>
+            <div className="overflow-x-auto max-h-[70vh] p-1">
+              <TacticalBoard
+                initialData={form.canvas_data}
+                onSave={(data) => {
+                  setForm((prev) => ({ ...prev, canvas_data: data }));
+                  setShowTacticalModal(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

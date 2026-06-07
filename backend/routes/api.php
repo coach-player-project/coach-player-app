@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TacticController;
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
@@ -90,6 +91,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Ankiety zmęczenia zawodników trenera (tylko odczyt)
         Route::get('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'coachIndex']);
+
+        // Taktyki meczowe
+        Route::get('/tactics', [TacticController::class, 'coachIndex']);
+        Route::post('/tactics', [TacticController::class, 'coachStore']);
+        Route::get('/tactics/{id}', [TacticController::class, 'coachShow']);
+        Route::put('/tactics/{id}', [TacticController::class, 'coachUpdate']);
+        Route::delete('/tactics/{id}', [TacticController::class, 'coachDestroy']);
     });
 
     // -----------------------------------------------------
@@ -104,5 +112,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
         Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
         Route::post('/events/{id}/fatigue', [EventController::class, 'playerDeclareFatigue']);
+
+        // Taktyki meczowe
+        Route::get('/tactics', [TacticController::class, 'playerIndex']);
+        Route::get('/tactics/{id}', [TacticController::class, 'playerShow']);
     });
 });

@@ -1,8 +1,9 @@
 "use client"
 
-import { Users, Loader2 } from "lucide-react"
+import { Users, Loader2, Calendar, Presentation, Dumbbell, MessageSquare } from "lucide-react"
 import { useState, useEffect } from "react"
 import { apiFetch } from "@/lib/api"
+import Link from "next/link"
 
 interface PlayerData {
   id: string
@@ -45,19 +46,25 @@ export default function CoachPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { title: "Planowanie treningów", link: "Wkrótce...", color: "bg-blue-100 text-blue-700" },
-          { title: "Tworzenie taktyki", link: "Wkrótce...", color: "bg-purple-100 text-purple-700" },
-          { title: "Jednostki treningowe", link: "Wkrótce...", color: "bg-orange-100 text-orange-700" },
-          { title: "Wysyłanie ankiet", link: "Wkrótce...", color: "bg-green-100 text-green-700" },
+          { title: "Planowanie treningów", label: "Zarządzaj kalendarzem i wydarzeniami", url: "/pages/coach/events", color: "bg-blue-100 text-blue-700", hoverColor: "hover:border-blue-300 hover:shadow-blue-50/50", icon: Calendar },
+          { title: "Tworzenie taktyki", label: "Zaprojektuj schemat na wirtualnej tablicy", url: "/pages/coach/tactics", color: "bg-purple-100 text-purple-700", hoverColor: "hover:border-purple-300 hover:shadow-purple-50/50", icon: Presentation },
+          { title: "Jednostki treningowe", label: "Twórz i przeglądaj ćwiczenia zespołu", url: "/pages/coach/training-units", color: "bg-orange-100 text-orange-700", hoverColor: "hover:border-orange-300 hover:shadow-orange-50/50", icon: Dumbbell },
+          { title: "Wysyłanie ankiet", label: "Monitoruj zmęczenie i samopoczucie", url: "/pages/coach/surveys", color: "bg-green-100 text-green-700", hoverColor: "hover:border-green-300 hover:shadow-green-50/50", icon: MessageSquare },
         ].map((item, i) => (
-          <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${item.color}`}>
-              {/* Miejsce na ikonę */}
-              <div className="w-6 h-6 opacity-70" />
+          <Link 
+            key={i} 
+            href={item.url}
+            className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all hover:border-gray-200 duration-200 cursor-pointer flex flex-col group ${item.hoverColor}`}
+          >
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${item.color}`}>
+              <item.icon className="w-5 h-5 shrink-0" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-            <p className="text-sm text-gray-500">{item.link}</p>
-          </div>
+            <h3 className="font-bold text-gray-900 mb-1.5 group-hover:text-blue-600 transition-colors">{item.title}</h3>
+            <p className="text-xs text-gray-500 leading-relaxed flex-1">{item.label}</p>
+            <span className="text-[11px] font-semibold text-blue-600 mt-4 group-hover:translate-x-1 transition-transform inline-flex items-center gap-0.5">
+              Przejdź &rarr;
+            </span>
+          </Link>
         ))}
       </div>
 
