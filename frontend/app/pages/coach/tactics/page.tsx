@@ -54,7 +54,8 @@ export default function CoachTacticsPage() {
     title: "",
     description: "",
     formation: "4-4-2",
-    match_date: ""
+    match_date: "",
+    show_opponents: true
   })
 
   // Load list of tactics
@@ -106,7 +107,10 @@ export default function CoachTacticsPage() {
         description: form.description.trim() || null,
         formation: form.formation,
         match_date: form.match_date ? new Date(form.match_date).toISOString() : null,
-        canvas_data: null
+        canvas_data: JSON.stringify({
+          formation: form.formation,
+          showOpponents: form.show_opponents
+        })
       }
 
       const res = await apiFetch("/coach/tactics", {
@@ -120,7 +124,8 @@ export default function CoachTacticsPage() {
         title: "",
         description: "",
         formation: "4-4-2",
-        match_date: ""
+        match_date: "",
+        show_opponents: true
       })
       
       // Open editor immediately for the newly created tactic
@@ -355,6 +360,19 @@ export default function CoachTacticsPage() {
                 onChange={(e) => setForm(prev => ({ ...prev, match_date: e.target.value }))}
                 className="h-10 rounded-xl focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 pb-1">
+              <input
+                id="show_opponents"
+                type="checkbox"
+                checked={form.show_opponents}
+                onChange={(e) => setForm(prev => ({ ...prev, show_opponents: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="show_opponents" className="text-sm font-semibold text-gray-700 cursor-pointer select-none">
+                Uwzględnij zespół przeciwny na tablicy
+              </label>
             </div>
 
             <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Play, RotateCcw, Trash2, Undo, Move, Pencil, Type, Check } from "lucide-react"
+import { Play, RotateCcw, Trash2, Undo, Move, Pencil, Type, Check, Plus, Flag } from "lucide-react"
 
 // Types for tactical board state serialization
 export interface TacticalItem {
@@ -27,6 +27,7 @@ export interface TacticalBoardData {
   drawings: TacticalDrawing[]
   notes: string
   formation?: string
+  showOpponents?: boolean
 }
 
 interface TacticalBoardProps {
@@ -40,68 +41,68 @@ interface TacticalBoardProps {
 const FORMATION_PRESETS: Record<string, { x: number; y: number }[]> = {
   "4-4-2": [
     { x: 0.08, y: 0.50 }, // GK
-    { x: 0.24, y: 0.82 }, // RB
-    { x: 0.22, y: 0.60 }, // RCB
-    { x: 0.22, y: 0.40 }, // LCB
-    { x: 0.24, y: 0.18 }, // LB
-    { x: 0.48, y: 0.82 }, // RM
-    { x: 0.45, y: 0.60 }, // RCM
-    { x: 0.45, y: 0.40 }, // LCM
-    { x: 0.48, y: 0.18 }, // LM
-    { x: 0.76, y: 0.58 }, // RS
-    { x: 0.76, y: 0.42 }, // LS
+    { x: 0.22, y: 0.80 }, // RB
+    { x: 0.20, y: 0.60 }, // RCB
+    { x: 0.20, y: 0.40 }, // LCB
+    { x: 0.22, y: 0.20 }, // LB
+    { x: 0.44, y: 0.80 }, // RM
+    { x: 0.42, y: 0.60 }, // RCM
+    { x: 0.42, y: 0.40 }, // LCM
+    { x: 0.44, y: 0.20 }, // LM
+    { x: 0.66, y: 0.58 }, // RS
+    { x: 0.66, y: 0.42 }, // LS
   ],
   "4-3-3": [
     { x: 0.08, y: 0.50 }, // GK
-    { x: 0.24, y: 0.82 }, // RB
-    { x: 0.22, y: 0.60 }, // RCB
-    { x: 0.22, y: 0.40 }, // LCB
-    { x: 0.24, y: 0.18 }, // LB
-    { x: 0.48, y: 0.68 }, // RCM
-    { x: 0.42, y: 0.50 }, // DM
-    { x: 0.48, y: 0.32 }, // LCM
-    { x: 0.74, y: 0.78 }, // RW
-    { x: 0.78, y: 0.50 }, // ST
-    { x: 0.74, y: 0.22 }, // LW
+    { x: 0.22, y: 0.80 }, // RB
+    { x: 0.20, y: 0.60 }, // RCB
+    { x: 0.20, y: 0.40 }, // LCB
+    { x: 0.22, y: 0.20 }, // LB
+    { x: 0.44, y: 0.68 }, // RCM
+    { x: 0.38, y: 0.50 }, // DM
+    { x: 0.44, y: 0.32 }, // LCM
+    { x: 0.66, y: 0.78 }, // RW
+    { x: 0.70, y: 0.50 }, // ST
+    { x: 0.66, y: 0.22 }, // LW
   ],
   "3-5-2": [
     { x: 0.08, y: 0.50 }, // GK
-    { x: 0.22, y: 0.70 }, // RCB
-    { x: 0.20, y: 0.50 }, // CB
-    { x: 0.22, y: 0.30 }, // LCB
-    { x: 0.46, y: 0.85 }, // RWB
-    { x: 0.46, y: 0.64 }, // RCM
-    { x: 0.40, y: 0.50 }, // DM
-    { x: 0.46, y: 0.36 }, // LCM
-    { x: 0.46, y: 0.15 }, // LWB
-    { x: 0.76, y: 0.58 }, // RS
-    { x: 0.76, y: 0.42 }, // LS
+    { x: 0.20, y: 0.70 }, // RCB
+    { x: 0.18, y: 0.50 }, // CB
+    { x: 0.20, y: 0.30 }, // LCB
+    { x: 0.42, y: 0.85 }, // RWB
+    { x: 0.42, y: 0.64 }, // RCM
+    { x: 0.36, y: 0.50 }, // DM
+    { x: 0.42, y: 0.36 }, // LCM
+    { x: 0.42, y: 0.15 }, // LWB
+    { x: 0.66, y: 0.58 }, // RS
+    { x: 0.66, y: 0.42 }, // LS
   ],
   "4-2-3-1": [
     { x: 0.08, y: 0.50 }, // GK
-    { x: 0.24, y: 0.82 }, // RB
-    { x: 0.22, y: 0.60 }, // RCB
-    { x: 0.22, y: 0.40 }, // LCB
-    { x: 0.24, y: 0.18 }, // LB
-    { x: 0.40, y: 0.62 }, // RDM
-    { x: 0.40, y: 0.38 }, // LDM
-    { x: 0.58, y: 0.78 }, // RAM
-    { x: 0.60, y: 0.50 }, // AM
-    { x: 0.58, y: 0.22 }, // LAM
-    { x: 0.78, y: 0.50 }, // ST
+    { x: 0.22, y: 0.80 }, // RB
+    { x: 0.20, y: 0.60 }, // RCB
+    { x: 0.20, y: 0.40 }, // LCB
+    { x: 0.22, y: 0.20 }, // LB
+    { x: 0.36, y: 0.62 }, // RDM
+    { x: 0.36, y: 0.38 }, // LDM
+    { x: 0.52, y: 0.78 }, // RAM
+    { x: 0.54, y: 0.50 }, // AM
+    { x: 0.52, y: 0.22 }, // LAM
+    { x: 0.70, y: 0.50 }, // ST
   ],
   "5-3-2": [
     { x: 0.08, y: 0.50 }, // GK
-    { x: 0.24, y: 0.85 }, // RWB
-    { x: 0.22, y: 0.66 }, // RCB
-    { x: 0.20, y: 0.50 }, // CB
-    { x: 0.22, y: 0.34 }, // LCB
-    { x: 0.24, y: 0.15 }, // LWB
-    { x: 0.46, y: 0.68 }, // RCM
-    { x: 0.43, y: 0.50 }, // CM
-    { x: 0.46, y: 0.32 }, // LCM
-    { x: 0.76, y: 0.58 }, // RS
-    { x: 0.76, y: 0.42 }, // LS
+    { x: 0.22, y: 0.85 }, // RWB
+    { x: 0.20, y: 0.66 }, // RCB
+    { x: 0.18, y: 0.50 }, // CB
+    { x: 0.20, y: 0.34 }, // LCB
+    { x: 0.22, y: 0.15 }, // LWB
+    { x: 0.42, y: 0.68 }, // RCM
+    { x: 0.40, y: 0.50 }, // CM
+    { x: 0.42, y: 0.32 }, // LCM
+    { x: 0.66, y: 0.58 }, // RS
+    { x: 0.66, y: 0.42 }, // LS
   ]
 }
 
@@ -116,7 +117,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
   const playerRadius = 16
 
   // Mode & Drawing states
-  const [toolMode, setToolMode] = useState<"move" | "freehand" | "arrow" | "dotted">("move")
+  const [toolMode, setToolMode] = useState<"move" | "freehand" | "arrow" | "dotted" | "cone">("move")
   const [penColor, setPenColor] = useState<string>("#ffffff")
   const [formation, setFormation] = useState<string>("4-4-2")
   const [notes, setNotes] = useState<string>("")
@@ -126,6 +127,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
   const [drawings, setDrawings] = useState<TacticalDrawing[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [activeDrawing, setActiveDrawing] = useState<TacticalDrawing | null>(null)
+  const [showOpponents, setShowOpponents] = useState<boolean>(true)
   
   // Drag state
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null)
@@ -135,10 +137,16 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     if (initialData) {
       try {
         const parsed = JSON.parse(initialData) as TacticalBoardData
-        if (parsed.items) setItems(parsed.items)
+        if (parsed.items && parsed.items.length > 0) {
+          setItems(parsed.items)
+        } else {
+          loadDefaultPitch(parsed.formation || formation)
+        }
         if (parsed.drawings) setDrawings(parsed.drawings)
         if (parsed.notes) setNotes(parsed.notes)
         if (parsed.formation) setFormation(parsed.formation)
+        if (parsed.showOpponents !== undefined) setShowOpponents(parsed.showOpponents)
+        else setShowOpponents(true)
       } catch (err) {
         console.error("Error loading tactical data:", err)
         loadDefaultPitch()
@@ -155,9 +163,49 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
         items,
         drawings,
         notes,
-        formation
+        formation,
+        showOpponents
       }
       onSave(JSON.stringify(data))
+    }
+  }
+
+  const handleAddCone = () => {
+    const newCone: TacticalItem = {
+      id: `cone-${Date.now()}`,
+      label: "P",
+      role: "C",
+      x: 0.5,
+      y: 0.5,
+      color: "orange",
+      type: "cone"
+    }
+    setItems((prev) => [...prev, newCone])
+  }
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (readOnly) return
+    const { x, y } = getRelativeCoords(e)
+
+    let foundIndex = -1
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i]
+      if (item.type !== "cone") continue
+
+      const px = item.x * canvasWidth
+      const py = item.y * canvasHeight
+      const clickX = x * canvasWidth
+      const clickY = y * canvasHeight
+      const dist = Math.sqrt((px - clickX) ** 2 + (py - clickY) ** 2)
+
+      if (dist <= 14) {
+        foundIndex = i
+        break
+      }
+    }
+
+    if (foundIndex !== -1) {
+      setItems((prev) => prev.filter((_, idx) => idx !== foundIndex))
     }
   }
 
@@ -186,25 +234,21 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
       })
     })
 
-    // 2. Opponents (Red) - Defending block on the right
-    const opponents = [
-      { x: 0.92, y: 0.50 }, // GK
-      { x: 0.75, y: 0.82 }, // RB
-      { x: 0.73, y: 0.60 }, // RCB
-      { x: 0.73, y: 0.40 }, // LCB
-      { x: 0.75, y: 0.18 }, // LB
-      { x: 0.55, y: 0.78 }, // RM
-      { x: 0.52, y: 0.58 }, // RCM
-      { x: 0.52, y: 0.42 }, // LCM
-      { x: 0.55, y: 0.22 }, // LM
-      { x: 0.38, y: 0.50 }, // FW
-    ]
-    opponents.forEach((pos, index) => {
+    // 2. Opponents (Red) - Defending block on the right (Mirrored selected formation)
+    const opponentPositions = FORMATION_PRESETS[selectedForm] || FORMATION_PRESETS["4-4-2"]
+    opponentPositions.forEach((pos, index) => {
+      const playerNum = index + 1
+      let role = "PO"
+      if (index === 0) role = "BR"
+      else if (index <= 4) role = "OB"
+      else if (index <= 8) role = "PO"
+      else role = "NA"
+
       defaultItems.push({
-        id: `o-${index + 1}`,
-        label: `O${index + 1}`,
-        role: "OB",
-        x: pos.x,
+        id: `o-${playerNum}`,
+        label: `O${playerNum}`,
+        role,
+        x: 1 - pos.x,
         y: pos.y,
         color: "red",
         type: "opponent"
@@ -281,9 +325,6 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     ctx.beginPath()
     ctx.arc(80, canvasHeight / 2, 3, 0, Math.PI * 2)
     ctx.fill()
-    ctx.beginPath()
-    ctx.arc(80, canvasHeight / 2, 40, -Math.PI / 3.5, Math.PI / 3.5)
-    ctx.stroke()
 
     // Penalty Area Right
     ctx.strokeRect(canvasWidth - 120, canvasHeight / 2 - 120, 100, 240)
@@ -291,9 +332,6 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     ctx.beginPath()
     ctx.arc(canvasWidth - 80, canvasHeight / 2, 3, 0, Math.PI * 2)
     ctx.fill()
-    ctx.beginPath()
-    ctx.arc(canvasWidth - 80, canvasHeight / 2, 40, Math.PI - Math.PI / 3.5, Math.PI + Math.PI / 3.5)
-    ctx.stroke()
 
     // Corner Arcs
     const cornerArcs = [
@@ -371,6 +409,8 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
 
     // 4. Render Items (Players, Ball, Cones)
     items.forEach((item) => {
+      if (item.type === "opponent" && !showOpponents) return; // skip hidden oponents
+
       const px = item.x * canvasWidth
       const py = item.y * canvasHeight
 
@@ -429,7 +469,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
         ctx.fillText(item.label, px, py - 1)
       }
     })
-  }, [items, drawings, activeDrawing])
+  }, [items, drawings, activeDrawing, showOpponents])
 
   // Coordinate Conversion Helper
   const getRelativeCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -460,11 +500,27 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     if (readOnly) return
     const { x, y } = getRelativeCoords(e)
 
+    if (toolMode === "cone") {
+      const newCone: TacticalItem = {
+        id: `cone-${Date.now()}`,
+        label: "P",
+        role: "C",
+        x,
+        y,
+        color: "orange",
+        type: "cone"
+      }
+      setItems((prev) => [...prev, newCone])
+      return
+    }
+
     if (toolMode === "move") {
       // Find item clicked (from top to bottom)
       let foundIndex = -1
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i]
+        if (item.type === "opponent" && !showOpponents) continue // skip hidden oponents
+
         const px = item.x * canvasWidth
         const py = item.y * canvasHeight
         const clickX = x * canvasWidth
@@ -604,10 +660,21 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
                 <Play className="h-4 w-4 rotate-90" />
                 <span>Bieg</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setToolMode("cone")}
+                className={`px-3 py-2 flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  toolMode === "cone" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50 text-gray-700"
+                }`}
+                title="Ustaw pachołek kliknięciem"
+              >
+                <Flag className={`h-4 w-4 ${toolMode === "cone" ? "text-orange-300" : "text-orange-500"}`} />
+                <span>Pachołek</span>
+              </button>
             </div>
 
             {/* Colors */}
-            {toolMode !== "move" && (
+            {toolMode !== "move" && toolMode !== "cone" && (
               <div className="flex gap-2 p-1 bg-gray-50 rounded-lg border border-gray-200 shrink-0">
                 {["#ffffff", "#ff4444", "#ffeb3b", "#000000"].map((c) => (
                   <button
@@ -644,6 +711,19 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
                 ))}
               </select>
             </div>
+
+            {/* Show Opponents Toggle */}
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showOpponents}
+                onChange={(e) => setShowOpponents(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span>Przeciwnicy</span>
+            </label>
+
+
 
             {/* Reset / Actions */}
             <button
@@ -689,6 +769,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
             onMouseMove={handleMove}
             onMouseUp={handleEnd}
             onMouseLeave={handleEnd}
+            onDoubleClick={handleDoubleClick}
             onTouchStart={handleStart}
             onTouchMove={handleMove}
             onTouchEnd={handleEnd}
@@ -733,6 +814,12 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
                 <span>Pachołek</span>
               </div>
             </div>
+            
+            {!readOnly && (
+              <div className="text-[10px] text-gray-400 text-center italic mt-2 pt-2 border-t border-gray-50">
+                💡 Dwukrotne kliknięcie na pachołek usuwa go z tablicy.
+              </div>
+            )}
           </div>
 
           {!readOnly && onSave && (
