@@ -170,7 +170,7 @@ export default function AdminMembershipsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-green-700 border-green-300 hover:bg-green-50"
+                      className="text-green-700 border-green-300 bg-green-50/50 hover:bg-green-100 hover:text-green-800 transition-colors"
                       disabled={actionId === item.id}
                       onClick={() => handleAction(item.id, "approve")}
                     >
@@ -186,7 +186,7 @@ export default function AdminMembershipsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-700 border-red-300 hover:bg-red-50"
+                      className="text-red-700 border-red-300 bg-red-50/50 hover:bg-red-100 hover:text-red-800 transition-colors"
                       disabled={actionId === item.id}
                       onClick={() => handleAction(item.id, "reject")}
                     >
@@ -208,6 +208,7 @@ export default function AdminMembershipsPage() {
             size="sm"
             disabled={page <= 1 || loading}
             onClick={() => setPage((p) => p - 1)}
+            className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/70 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
           >
             Poprzednia
           </Button>
@@ -219,6 +220,7 @@ export default function AdminMembershipsPage() {
             size="sm"
             disabled={page >= meta.last_page || loading}
             onClick={() => setPage((p) => p + 1)}
+            className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/70 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
           >
             Następna
           </Button>

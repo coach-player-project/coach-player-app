@@ -39,4 +39,15 @@ class Team extends Model
     {
         return $this->belongsTo(User::class, 'coach_id');
     }
+
+    public function trainingSessions()
+    {
+        return $this->hasMany(TrainingSession::class, 'team_id');
+    }
+
+    public function tactics()
+    {
+        return $this->hasMany(Tactic::class, 'team_id');
+    }
 }
+

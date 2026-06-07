@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TacticController;
 
 Route::get('/teams', [TeamController::class, 'index']);
@@ -21,7 +22,15 @@ Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
-        return clone $request->user();
+        $user = $request->user();
+        if ($user->role === 'player') {
+            $user->load(['teamMemberships' => function ($q) {
+                $q->where('status', 'approved')->with('team');
+            }]);
+        } elseif ($user->role === 'coach') {
+            $user->load('coachedTeams');
+        }
+        return response()->json($user);
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
@@ -52,6 +61,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/team-members', [\App\Http\Controllers\TeamMemberController::class, 'index']);
         Route::post('/team-members/{id}/approve', [\App\Http\Controllers\TeamMemberController::class, 'approve']);
         Route::post('/team-members/{id}/reject', [\App\Http\Controllers\TeamMemberController::class, 'reject']);
+
+
+
+        // Pobieranie listy użytkowników
+        Route::get('/users', [\App\Http\Controllers\AdminController::class, 'index']);
+        Route::post('/users', [\App\Http\Controllers\AdminController::class, 'store']);
+        Route::get('/users/{id}', [\App\Http\Controllers\AdminController::class, 'show']);
+        Route::put('/users/{id}', [\App\Http\Controllers\AdminController::class, 'update']);
+        Route::delete('/users/{id}', [\App\Http\Controllers\AdminController::class, 'destroy']);
     });
 
 
@@ -63,12 +81,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Trenerze w panelu zarządzania treningami']);
         });
+        Route::get('/dashboard/players', [DashboardController::class, 'coachPlayers']);
         Route::get('/teams', [TeamController::class, 'coachIndex']);
         Route::get('/events', [EventController::class, 'coachIndex']);
         Route::post('/events', [EventController::class, 'coachStore']);
         Route::get('/events/{id}', [EventController::class, 'coachShow']);
         Route::put('/events/{id}', [EventController::class, 'coachUpdate']);
         Route::delete('/events/{id}', [EventController::class, 'coachDestroy']);
+
+        // Ankiety zmęczenia zawodników trenera (tylko odczyt)
+        Route::get('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'coachIndex']);
 
         // Taktyki meczowe
         Route::get('/tactics', [TacticController::class, 'coachIndex']);
@@ -85,8 +107,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Witaj Zawodniku w swoim prywatnym panelu wyników']);
         });
+        Route::get('/dashboard/summary', [DashboardController::class, 'playerSummary']);
         Route::get('/events', [EventController::class, 'playerIndex']);
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
         Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
+        Route::post('/events/{id}/fatigue', [EventController::class, 'playerDeclareFatigue']);
     });
 });

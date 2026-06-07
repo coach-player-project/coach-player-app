@@ -346,7 +346,7 @@ export default function AdminTeamsPage() {
               {submitting ? "Zapisywanie..." : isEditing ? "Zapisz zmiany" : "Dodaj drużynę"}
             </Button>
             {isEditing && (
-              <Button type="button" variant="outline" onClick={resetForm}>
+              <Button type="button" variant="outline" onClick={resetForm} className="border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-950 transition-colors">
                 Anuluj edycję
               </Button>
             )}
@@ -450,6 +450,7 @@ export default function AdminTeamsPage() {
               size="sm"
               disabled={meta.current_page <= 1 || loading}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/70 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
             >
               Poprzednia
             </Button>
@@ -458,6 +459,7 @@ export default function AdminTeamsPage() {
               size="sm"
               disabled={meta.current_page >= meta.last_page || loading}
               onClick={() => setPage((prev) => prev + 1)}
+              className="border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/70 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
             >
               Następna
             </Button>
