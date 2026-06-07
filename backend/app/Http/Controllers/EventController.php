@@ -290,6 +290,8 @@ class EventController extends Controller
             return response()->json(['message' => 'Event not found.'], 404);
         }
 
+        $event = $this->loadExercisesForEvent($event);
+
         return response()->json(['event' => $event], 200);
     }
 
@@ -388,6 +390,21 @@ class EventController extends Controller
         ]);
         $id = $event->id;
 
+        // Save exercises if present
+        if (isset($validatedData['exercises'])) {
+            foreach ($validatedData['exercises'] as $ex) {
+                DB::table('training_exercises')->insert([
+                    'id' => Str::uuid()->toString(),
+                    'training_id' => $id,
+                    'name' => $ex['name'],
+                    'description' => $ex['description'] ?? null,
+                    'canvas_schema' => $ex['canvas_schema'] ?? null,
+                    'order_index' => $ex['order_index'],
+                    'tools_count' => $ex['tools_count'] ?? 0,
+                ]);
+            }
+        }
+
         $event = $this->findEventById($id);
 
         return response()->json([
@@ -423,7 +440,25 @@ class EventController extends Controller
             return response()->json(['message' => 'No valid fields to update.'], 422);
         }
 
-        $eventModel->update($validatedData);
+        $updateData = collect($validatedData)->except(['exercises'])->toArray();
+        $eventModel->update($updateData);
+
+        if (isset($validatedData['exercises'])) {
+            // Delete old exercises
+            DB::table('training_exercises')->where('training_id', $id)->delete();
+            // Insert new exercises
+            foreach ($validatedData['exercises'] as $ex) {
+                DB::table('training_exercises')->insert([
+                    'id' => Str::uuid()->toString(),
+                    'training_id' => $id,
+                    'name' => $ex['name'],
+                    'description' => $ex['description'] ?? null,
+                    'canvas_schema' => $ex['canvas_schema'] ?? null,
+                    'order_index' => $ex['order_index'],
+                    'tools_count' => $ex['tools_count'] ?? 0,
+                ]);
+            }
+        }
 
         $event = $this->findEventById($id);
 
@@ -457,6 +492,12 @@ class EventController extends Controller
                 'duration_minutes' => ['required', 'integer', 'min:1'],
                 'canvas_data' => ['nullable', 'string'],
                 'google_event_id' => ['nullable', 'string'],
+                'exercises' => ['nullable', 'array'],
+                'exercises.*.name' => ['required', 'string', 'max:255'],
+                'exercises.*.description' => ['nullable', 'string'],
+                'exercises.*.canvas_schema' => ['nullable', 'string'],
+                'exercises.*.order_index' => ['required', 'integer'],
+                'exercises.*.tools_count' => ['nullable', 'integer'],
             ]);
         }
 
@@ -469,6 +510,12 @@ class EventController extends Controller
             'duration_minutes' => ['sometimes', 'required', 'integer', 'min:1'],
             'canvas_data' => ['sometimes', 'nullable', 'string'],
             'google_event_id' => ['sometimes', 'nullable', 'string'],
+            'exercises' => ['nullable', 'array'],
+            'exercises.*.name' => ['required', 'string', 'max:255'],
+            'exercises.*.description' => ['nullable', 'string'],
+            'exercises.*.canvas_schema' => ['nullable', 'string'],
+            'exercises.*.order_index' => ['required', 'integer'],
+            'exercises.*.tools_count' => ['nullable', 'integer'],
         ]);
     }
 
@@ -506,11 +553,24 @@ class EventController extends Controller
         return $query->select($selects);
     }
 
+    private function loadExercisesForEvent($event)
+    {
+        if ($event) {
+            $event->exercises = DB::table('training_exercises')
+                ->where('training_id', $event->id)
+                ->orderBy('order_index', 'asc')
+                ->get();
+        }
+        return $event;
+    }
+
     private function findEventById(string $id)
     {
-        return $this->baseEventQuery()
+        $event = $this->baseEventQuery()
             ->where('training_sessions.id', $id)
             ->first();
+
+        return $this->loadExercisesForEvent($event);
     }
 
     private function coachOwnsTeam(string $coachId, string $teamId): bool

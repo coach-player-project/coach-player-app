@@ -44,6 +44,14 @@ type EventItem = {
   player_fatigue_rating?: number | null
   player_fatigue_submitted_at?: string | null
   canvas_data?: string | null
+  exercises?: {
+    id: string
+    name: string
+    description: string | null
+    canvas_schema: string | null
+    order_index: number
+    tools_count: number
+  }[]
 }
 
 type EventsResponse = {
@@ -80,6 +88,12 @@ export default function PlayerEventsPage() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [showTacticalModal, setShowTacticalModal] = useState(false)
+
+  // Drill Modal States
+  const [showDrillModal, setShowDrillModal] = useState(false)
+  const [drillCanvasData, setDrillCanvasData] = useState<string | null>(null)
+  const [drillModalTitle, setDrillModalTitle] = useState("")
+
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [eventDetails, setEventDetails] = useState<EventItem | null>(null)
 
@@ -529,6 +543,73 @@ export default function PlayerEventsPage() {
                 </div>
               )}
 
+              {/* Exercise Drills List */}
+              {eventDetails.exercises && eventDetails.exercises.length > 0 && (
+                <div className="space-y-3">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block font-semibold text-gray-500">Plan ćwiczeń ({eventDetails.exercises.length})</span>
+                  <div className="space-y-3">
+                    {eventDetails.exercises.map((ex, index) => {
+                      const parsed = {
+                        tools: {} as Record<string, number>,
+                        canvas_data: null as string | null
+                      }
+                      if (ex.canvas_schema) {
+                        try {
+                          const p = JSON.parse(ex.canvas_schema)
+                          parsed.tools = p.tools || {}
+                          parsed.canvas_data = p.canvas_data || null
+                        } catch (e) {}
+                      }
+
+                      const activeTools = Object.entries(parsed.tools).filter(([_, count]) => count > 0)
+
+                      return (
+                        <div key={index} className="bg-gray-50/50 border border-gray-150 p-4 rounded-xl space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold flex items-center justify-center">
+                                {index + 1}
+                              </span>
+                              {ex.name}
+                            </h4>
+                            {parsed.canvas_data && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDrillCanvasData(parsed.canvas_data)
+                                  setDrillModalTitle(ex.name)
+                                  setShowDrillModal(true)
+                                }}
+                                className="text-[10px] font-semibold text-blue-600 hover:text-blue-750 flex items-center gap-0.5 bg-white border border-gray-200 px-2 py-1 rounded-lg transition-colors shadow-sm"
+                              >
+                                <Presentation className="w-3.5 h-3.5" />
+                                <span>Schemat</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {ex.description && (
+                            <p className="text-xs text-gray-600 leading-relaxed bg-white/70 p-2.5 rounded-lg border border-gray-100">
+                              {ex.description}
+                            </p>
+                          )}
+
+                          {activeTools.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {activeTools.map(([toolName, count]) => (
+                                <Badge key={toolName} className="bg-gray-100 border border-gray-200 text-gray-700 px-2 py-0.5 text-[10px] rounded-full font-medium">
+                                  {toolName}: {count}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Attendance management section */}
               <div className="border-t border-gray-100 pt-6 space-y-4">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block font-semibold text-gray-500">Twoja obecność</span>
@@ -758,6 +839,37 @@ export default function PlayerEventsPage() {
             <div className="overflow-x-auto max-h-[70vh] p-1">
               <TacticalBoard
                 initialData={eventDetails.canvas_data}
+                readOnly={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Exercise Drill Tactical Board Canvas Modal */}
+      {showDrillModal && drillCanvasData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-5xl bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-150 pb-3">
+              <div className="flex items-center gap-2">
+                <Presentation className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-lg font-bold text-gray-900 font-sans">
+                  Schemat ćwiczenia: {drillModalTitle}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDrillModal(false)
+                  setDrillCanvasData(null)
+                }}
+                className="text-gray-400 hover:text-gray-600 font-semibold text-sm"
+              >
+                Zamknij
+              </button>
+            </div>
+            <div className="overflow-x-auto max-h-[70vh] p-1">
+              <TacticalBoard
+                initialData={drillCanvasData}
                 readOnly={true}
               />
             </div>
