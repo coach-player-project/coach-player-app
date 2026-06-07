@@ -112,5 +112,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'playerShow']);
         Route::post('/events/{id}/attendance', [EventController::class, 'playerDeclareAttendance']);
         Route::post('/events/{id}/fatigue', [EventController::class, 'playerDeclareFatigue']);
+
+        // Taktyki meczowe
+        Route::get('/tactics', [TacticController::class, 'playerIndex']);
+        Route::get('/tactics/{id}', [TacticController::class, 'playerShow']);
     });
 });

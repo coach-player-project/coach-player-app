@@ -168,8 +168,79 @@ class TacticController extends Controller
     }
 
     // -------------------------------------------------------------------------
+    // Player endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Lista taktyk przypisanych do drużyn zawodnika.
+     */
+    public function playerIndex(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $teamIds = DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->pluck('team_id');
+
+        if ($teamIds->isEmpty()) {
+            return response()->json(['data' => []], 200);
+        }
+
+        $tactics = DB::table('tactics')
+            ->join('teams', 'teams.id', '=', 'tactics.team_id')
+            ->whereIn('tactics.team_id', $teamIds)
+            ->select(
+                'tactics.id',
+                'tactics.title',
+                'tactics.description',
+                'tactics.formation',
+                'tactics.match_date',
+                'tactics.created_at',
+                'teams.name as team_name',
+                'teams.id as team_id'
+            )
+            ->orderBy('tactics.created_at', 'desc')
+            ->get();
+
+        return response()->json(['data' => $tactics], 200);
+    }
+
+    /**
+     * Szczegóły taktyki dla zawodnika.
+     */
+    public function playerShow(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $tactic = $this->findTacticById($id);
+        if (!$tactic) {
+            return response()->json(['message' => 'Nie znaleziono taktyki.'], 404);
+        }
+
+        $isMember = DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->where('team_id', $tactic->team_id)
+            ->where('status', 'approved')
+            ->exists();
+
+        if (!$isMember) {
+            return response()->json(['message' => 'Nie masz uprawnień do tej taktyki.'], 403);
+        }
+
+        return response()->json(['tactic' => $tactic], 200);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
 
     private function findTacticById(string $id)
     {

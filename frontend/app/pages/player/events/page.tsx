@@ -20,7 +20,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Calendar, Clock, Search, Shield, User, Mail, ChevronRight, Dumbbell, Trophy, Check, X } from "lucide-react"
+import { Calendar, Clock, Search, Shield, User, Mail, ChevronRight, Dumbbell, Trophy, Check, X, Presentation } from "lucide-react"
+import { TacticalBoard } from "@/components/tactical-board"
 
 type EventType = "training" | "match"
 
@@ -42,6 +43,7 @@ type EventItem = {
   attendance_responded_at?: string | null
   player_fatigue_rating?: number | null
   player_fatigue_submitted_at?: string | null
+  canvas_data?: string | null
 }
 
 type EventsResponse = {
@@ -77,6 +79,7 @@ export default function PlayerEventsPage() {
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [showTacticalModal, setShowTacticalModal] = useState(false)
   const [detailsLoading, setDetailsLoading] = useState(false)
   const [eventDetails, setEventDetails] = useState<EventItem | null>(null)
 
@@ -328,9 +331,17 @@ export default function PlayerEventsPage() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                        {item.title}
+                     <TableCell className="py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                          {item.title}
+                        </span>
+                        {item.canvas_data && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-50 border border-indigo-150 text-indigo-700 px-2 py-0.5 rounded-full" title="Dołączono plan taktyczny">
+                            <Presentation className="w-3.5 h-3.5" />
+                            Taktyka
+                          </span>
+                        )}
                       </div>
                       {item.description && (
                         <div className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-sm">
@@ -502,6 +513,21 @@ export default function PlayerEventsPage() {
                   {eventDetails.description ? eventDetails.description : "Brak dodatkowego opisu dla tego wydarzenia."}
                 </div>
               </div>
+
+              {/* Tactical Board preview button */}
+              {eventDetails.canvas_data && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Plan taktyczny trenera</span>
+                  <Button
+                    type="button"
+                    onClick={() => setShowTacticalModal(true)}
+                    className="w-full bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl px-4 py-2.5 font-semibold flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Presentation className="h-4 w-4" />
+                    <span>Zobacz tablicę taktyczną</span>
+                  </Button>
+                </div>
+              )}
 
               {/* Attendance management section */}
               <div className="border-t border-gray-100 pt-6 space-y-4">
@@ -712,6 +738,32 @@ export default function PlayerEventsPage() {
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {showTacticalModal && eventDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-5xl space-y-4 my-8">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Presentation className="h-5 w-5 text-indigo-600" />
+                Taktyka dla: {eventDetails.title}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowTacticalModal(false)}
+                className="text-gray-400 hover:text-gray-655 font-semibold text-sm"
+              >
+                Zamknij
+              </button>
+            </div>
+            <div className="overflow-x-auto max-h-[70vh] p-1">
+              <TacticalBoard
+                initialData={eventDetails.canvas_data}
+                readOnly={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
