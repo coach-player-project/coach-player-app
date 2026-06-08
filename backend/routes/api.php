@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/{id}', [EventController::class, 'coachShow']);
         Route::put('/events/{id}', [EventController::class, 'coachUpdate']);
         Route::delete('/events/{id}', [EventController::class, 'coachDestroy']);
+        Route::get('/events/{id}/attendance', [EventController::class, 'coachGetAttendance']);
+        Route::post('/events/{id}/attendance', [EventController::class, 'coachSaveAttendance']);
 
         // Ankiety zmęczenia zawodników trenera (tylko odczyt)
         Route::get('/fatigue-ratings', [\App\Http\Controllers\FatigueRatingController::class, 'coachIndex']);
