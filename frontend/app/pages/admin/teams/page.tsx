@@ -119,10 +119,11 @@ export default function AdminTeamsPage() {
     }
   }
 
-  async function loadCoaches() {
+  async function loadCoaches(excludeTeamId?: string) {
     setCoachesLoading(true);
     try {
-      const res = (await apiFetch("/admin/teams/coaches")) as { data?: CoachOption[] };
+      const param = excludeTeamId ? `?exclude_team_id=${excludeTeamId}` : "";
+      const res = (await apiFetch(`/admin/teams/coaches${param}`)) as { data?: CoachOption[] };
       const coachData = res.data ?? [];
       setCoaches(coachData);
 
@@ -150,13 +151,14 @@ export default function AdminTeamsPage() {
   function resetForm() {
     setForm({
       ...initialForm,
-      coach_id: coaches[0]?.id ?? "",
+      coach_id: "",
     });
     setEditingId(null);
     setLogoFile(null);
     setLogoPreview(null);
     setExistingLogoUrl(null);
     setRemoveLogo(false);
+    void loadCoaches();
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -222,6 +224,7 @@ export default function AdminTeamsPage() {
 
   function onEdit(team: TeamItem) {
     setEditingId(team.id);
+    void loadCoaches(team.id);
     setForm({
       name: team.name ?? "",
       description: team.description ?? "",

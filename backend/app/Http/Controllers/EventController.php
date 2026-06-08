@@ -788,6 +788,125 @@ class EventController extends Controller
             'event' => $event,
         ], 200);
     }
+
+    /**
+     * Get attendance list for coach.
+     */
+    public function coachGetAttendance(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->coachOwnsEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        $event = TrainingSession::findOrFail($id);
+
+        // Fetch team players
+        $teamMembers = TeamMember::query()
+            ->where('team_id', $event->team_id)
+            ->where('status', TeamMember::STATUS_APPROVED)
+            ->with('user:id,first_name,last_name,email,avatar_url')
+            ->get();
+
+        // Fetch attendance records
+        $attendance = Attendance::query()
+            ->where('training_id', $id)
+            ->get()
+            ->keyBy('user_id');
+
+        $data = $teamMembers->map(function ($member) use ($attendance) {
+            $player = $member->user;
+            if (!$player) return null;
+
+            $att = $attendance->get($player->id);
+
+            return [
+                'user_id' => $player->id,
+                'first_name' => $player->first_name,
+                'last_name' => $player->last_name,
+                'email' => $player->email,
+                'avatar_url' => $player->avatar_url,
+                'status' => $att ? $att->status : null,
+                'note' => $att ? $att->note : null,
+                'responded_at' => $att ? $att->responded_at : null,
+            ];
+        })->filter()->values();
+
+        return response()->json([
+            'attendance' => $data
+        ]);
+    }
+
+    /**
+     * Save/override player attendance status by coach.
+     */
+    public function coachSaveAttendance(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if (!$this->coachOwnsEvent($user->id, $id)) {
+            return response()->json(['message' => 'Nie masz uprawnień do tego wydarzenia.'], 403);
+        }
+
+        $request->validate([
+            'user_id' => 'required|uuid|exists:users,id',
+            'status' => 'required|string|in:obecny,nieobecny,unanswered',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $event = TrainingSession::findOrFail($id);
+        $userId = $request->input('user_id');
+        $status = $request->input('status');
+        $note = $request->input('note');
+
+        // Check if player is in the team
+        $isMember = TeamMember::query()
+            ->where('team_id', $event->team_id)
+            ->where('user_id', $userId)
+            ->where('status', TeamMember::STATUS_APPROVED)
+            ->exists();
+
+        if (!$isMember) {
+            return response()->json(['message' => 'Ten zawodnik nie należy do drużyny przypisanej do tego wydarzenia.'], 422);
+        }
+
+        if ($status === 'unanswered') {
+            Attendance::query()
+                ->where('training_id', $id)
+                ->where('user_id', $userId)
+                ->delete();
+        } else {
+            $existing = Attendance::query()
+                ->where('training_id', $id)
+                ->where('user_id', $userId)
+                ->first();
+
+            if ($existing) {
+                $existing->update([
+                    'status' => $status,
+                    'note' => $note,
+                    'responded_at' => now(),
+                ]);
+            } else {
+                Attendance::query()->create([
+                    'training_id' => $id,
+                    'user_id' => $userId,
+                    'status' => $status,
+                    'note' => $note,
+                    'responded_at' => now(),
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Zapisano obecność zawodnika pomyślnie.']);
+    }
 }
 
 

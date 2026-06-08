@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 2. Create Coach
+        // 2. Create Coach 1
         $coachId = Str::uuid()->toString();
         DB::table('users')->insert([
             'id' => $coachId,
@@ -37,14 +37,28 @@ class DatabaseSeeder extends Seeder
             'first_name' => 'Jan',
             'last_name' => 'Kowalski',
             'role' => 'coach',
-            'avatar_url' => 'https://api.dicebear.com/7.x/avataaars/svg?seed=coach',
+            'avatar_url' => 'https://api.dicebear.com/7.x/avataaars/svg?seed=coach1',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // 3. Create Players
+        // Create Coach 2
+        $coach2Id = Str::uuid()->toString();
+        DB::table('users')->insert([
+            'id' => $coach2Id,
+            'email' => 'coach2@example.com',
+            'password_hash' => Hash::make('password123'),
+            'first_name' => 'Piotr',
+            'last_name' => 'Nowak',
+            'role' => 'coach',
+            'avatar_url' => 'https://api.dicebear.com/7.x/avataaars/svg?seed=coach2',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 3. Create Players (22 total: 11 for Team 1, 11 for Team 2)
         $playerIds = [];
-        for ($i = 1; $i <= 11; $i++) {
+        for ($i = 1; $i <= 22; $i++) {
             $playerId = Str::uuid()->toString();
             $playerIds[] = $playerId;
             
@@ -61,7 +75,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 4. Create Teams
+        // 4. Create Team 1
         $teamId = Str::uuid()->toString();
         DB::table('teams')->insert([
             'id' => $teamId,
@@ -71,8 +85,19 @@ class DatabaseSeeder extends Seeder
             'created_at' => now()->subDays(30),
         ]);
 
+        // Create Team 2
+        $team2Id = Str::uuid()->toString();
+        DB::table('teams')->insert([
+            'id' => $team2Id,
+            'name' => 'Orły Warszawa',
+            'description' => 'Stołeczny klub z tradycjami, gotowy na rywalizację.',
+            'coach_id' => $coach2Id,
+            'created_at' => now()->subDays(30),
+        ]);
+
+        // Create other dummy teams
         $teamNames = [
-            'Orły Warszawa', 'Polonia Kraków', 'Wisła Poznań', 'Warta Gdańsk', 'Lech Wrocław',
+            'Polonia Kraków', 'Wisła Poznań', 'Warta Gdańsk', 'Lech Wrocław',
             'Cracovia Łódź', 'Śląsk Gdynia', 'Pogoń Katowice', 'Górnik Toruń', 'Sparta Bydgoszcz',
             'Odra Opole', 'Miedź Legnica', 'Arka Lublin', 'Zawisza Białystok', 'Stal Rzeszów',
             'Widzew Częstochowa', 'Motor Radom', 'Raków Kielce', 'Korona Olsztyn', 'Piast Gliwice',
@@ -80,21 +105,47 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($teamNames as $index => $name) {
+            $extraCoachId = Str::uuid()->toString();
+            $emailNum = $index + 1;
+            
+            DB::table('users')->insert([
+                'id' => $extraCoachId,
+                'email' => "coach_extra{$emailNum}@example.com",
+                'password_hash' => Hash::make('password123'),
+                'first_name' => "Trener",
+                'last_name' => "Dodatkowy {$emailNum}",
+                'role' => 'coach',
+                'avatar_url' => "https://api.dicebear.com/7.x/avataaars/svg?seed=coach_extra{$emailNum}",
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             DB::table('teams')->insert([
                 'id' => Str::uuid()->toString(),
                 'name' => $name,
                 'description' => 'Przykładowa drużyna wygenerowana dla potrzeb testowania paginacji i sortowania SFP.',
-                'coach_id' => $coachId,
+                'coach_id' => $extraCoachId,
                 'created_at' => now()->subDays(rand(1, 100)),
             ]);
         }
 
-        // 5. Assign Players to Team
-        foreach ($playerIds as $playerId) {
+        // 5. Assign Players to Teams (1-11 to Team 1, 12-22 to Team 2) with status 'approved'
+        foreach (array_slice($playerIds, 0, 11) as $playerId) {
             DB::table('team_members')->insert([
                 'id' => Str::uuid()->toString(),
                 'team_id' => $teamId,
                 'user_id' => $playerId,
+                'status' => 'approved',
+                'joined_at' => now()->subDays(rand(1, 25)),
+            ]);
+        }
+
+        foreach (array_slice($playerIds, 11, 11) as $playerId) {
+            DB::table('team_members')->insert([
+                'id' => Str::uuid()->toString(),
+                'team_id' => $team2Id,
+                'user_id' => $playerId,
+                'status' => 'approved',
                 'joined_at' => now()->subDays(rand(1, 25)),
             ]);
         }

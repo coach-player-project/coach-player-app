@@ -113,6 +113,44 @@ export default function CoachEventsPage() {
 
   const isEditing = Boolean(editingId);
 
+  // Attendance state
+  const [selectedEventForAttendance, setSelectedEventForAttendance] = useState<EventItem | null>(null);
+  const [attendanceList, setAttendanceList] = useState<any[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceSavingId, setAttendanceSavingId] = useState<string | null>(null);
+
+  async function loadAttendance(eventId: string) {
+    setAttendanceLoading(true);
+    try {
+      const res = (await apiFetch(`/coach/events/${eventId}/attendance`)) as {
+        attendance: any[];
+      };
+      setAttendanceList(res.attendance ?? []);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Nie udało się pobrać listy obecności.");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }
+
+  async function updatePlayerAttendance(eventId: string, userId: string, status: string) {
+    setAttendanceSavingId(userId);
+    try {
+      await apiFetch(`/coach/events/${eventId}/attendance`, {
+        method: "POST",
+        body: JSON.stringify({ user_id: userId, status }),
+      });
+      await loadAttendance(eventId);
+      setMessage("Zaktualizowano obecność zawodnika.");
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Nie udało się zaktualizować obecności.");
+    } finally {
+      setAttendanceSavingId(null);
+    }
+  }
+
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     params.set("page", String(page));
@@ -549,6 +587,17 @@ export default function CoachEventsPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 rounded-xl px-4 py-1.5 transition-all font-semibold"
+                        onClick={() => {
+                          setSelectedEventForAttendance(item);
+                          void loadAttendance(item.id);
+                        }}
+                      >
+                        Obecność
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 rounded-xl px-4 py-1.5 transition-all font-semibold"
                         onClick={() => onEdit(item)}
                       >
@@ -621,6 +670,147 @@ export default function CoachEventsPage() {
                   setShowTacticalModal(false);
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedEventForAttendance && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-3xl space-y-4 my-8">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-emerald-600" />
+                  <span>Obecność: {selectedEventForAttendance.title}</span>
+                </h2>
+                <p className="text-xs text-gray-400">
+                  Drużyna: {selectedEventForAttendance.team_name} | Termin: {new Date(selectedEventForAttendance.scheduled_at).toLocaleString('pl-PL')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEventForAttendance(null);
+                  setAttendanceList([]);
+                }}
+                className="text-gray-400 hover:text-gray-600 font-semibold text-sm cursor-pointer p-1.5 hover:bg-gray-50 rounded-lg"
+              >
+                Zamknij
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto p-1 divide-y divide-gray-100">
+              {attendanceLoading ? (
+                <div className="flex flex-col items-center gap-2 justify-center py-12 text-gray-400">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+                  <span className="text-sm font-medium">Pobieranie listy zawodników...</span>
+                </div>
+              ) : attendanceList.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  Brak przypisanych zatwierdzonych zawodników w tej drużynie.
+                </div>
+              ) : (
+                attendanceList.map((player) => {
+                  const initials = `${player.first_name?.[0] || ""}${player.last_name?.[0] || ""}`.toUpperCase();
+                  const isSaving = attendanceSavingId === player.user_id;
+
+                  return (
+                    <div key={player.user_id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0">
+                      {/* Player profile */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
+                          {initials}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm text-gray-900">{player.first_name} {player.last_name}</p>
+                          <p className="text-xs text-gray-500">{player.email}</p>
+                        </div>
+                      </div>
+
+                      {/* Declaration note */}
+                      {player.note && (
+                        <div className="text-xs bg-amber-50 border border-amber-100 text-amber-800 px-3 py-1.5 rounded-lg max-w-xs sm:mx-4 font-normal">
+                          <span className="font-semibold block mb-0.5">Uzasadnienie:</span>
+                          "{player.note}"
+                        </div>
+                      )}
+
+                      {/* Status and Actions */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Status Badge */}
+                        <div className="w-28 text-center sm:text-right">
+                          {player.status === "obecny" ? (
+                            <Badge className="bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-xs px-2.5 py-0.5 rounded-full">
+                              Obecny
+                            </Badge>
+                          ) : player.status === "nieobecny" ? (
+                            <Badge className="bg-rose-50 border border-rose-200 text-rose-700 font-semibold text-xs px-2.5 py-0.5 rounded-full">
+                              Nieobecny
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-50 border border-gray-200 text-gray-500 font-medium text-xs px-2.5 py-0.5 rounded-full">
+                              Brak
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Direct Controls */}
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            disabled={isSaving}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold shadow-sm flex items-center gap-1 cursor-pointer transition-colors ${
+                              player.status === "obecny"
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                : "bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                            }`}
+                            onClick={() => updatePlayerAttendance(selectedEventForAttendance.id, player.user_id, "obecny")}
+                          >
+                            Obecny
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={isSaving}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold shadow-sm flex items-center gap-1 cursor-pointer transition-colors ${
+                              player.status === "nieobecny"
+                                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                                : "bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100"
+                            }`}
+                            onClick={() => updatePlayerAttendance(selectedEventForAttendance.id, player.user_id, "nieobecny")}
+                          >
+                            Nieobecny
+                          </Button>
+                          {player.status !== null && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isSaving}
+                              className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded-lg"
+                              onClick={() => updatePlayerAttendance(selectedEventForAttendance.id, player.user_id, "unanswered")}
+                            >
+                              Wyczyść
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-gray-100">
+              <Button
+                type="button"
+                onClick={() => {
+                  setSelectedEventForAttendance(null);
+                  setAttendanceList([]);
+                }}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl px-5 font-semibold transition-colors"
+              >
+                Zamknij
+              </Button>
             </div>
           </div>
         </div>

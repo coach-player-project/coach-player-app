@@ -135,6 +135,15 @@ class TeamController extends Controller
             return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
         }
 
+        // Enforce one coach per team rule
+        $alreadyAssigned = Team::query()
+            ->where('coach_id', $validatedData['coach_id'])
+            ->exists();
+
+        if ($alreadyAssigned) {
+            return response()->json(['message' => 'Wybrany trener jest już przypisany do innej drużyny.'], 422);
+        }
+
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('teams/logos', 'public');
             $validatedData['logo_path'] = $path;
@@ -245,6 +254,16 @@ class TeamController extends Controller
             if (!$coach) {
                 return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
             }
+
+            // Enforce one coach per team rule
+            $alreadyAssigned = Team::query()
+                ->where('coach_id', $validatedData['coach_id'])
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($alreadyAssigned) {
+                return response()->json(['message' => 'Wybrany trener jest już przypisany do innej drużyny.'], 422);
+            }
         }
 
         if ($request->hasFile('logo')) {
@@ -323,11 +342,25 @@ class TeamController extends Controller
             new OA\Response(response: 401, description: 'Brak autoryzacji')
         ]
     )]
-    public function coaches()
+    public function coaches(Request $request)
     {
-        $coaches = User::query()
-            ->select(['id', 'first_name', 'last_name', 'email'])
-            ->where('role', 'coach')
+        $excludeTeamId = $request->query('exclude_team_id');
+
+        $query = User::query()
+            ->where('role', 'coach');
+
+        // Only select coaches that do not coach any team, 
+        // unless they are currently assigned to the team being edited ($excludeTeamId)
+        $query->where(function ($q) use ($excludeTeamId) {
+            $q->whereDoesntHave('coachedTeams')
+              ->when($excludeTeamId, function ($inner) use ($excludeTeamId) {
+                  $inner->orWhereHas('coachedTeams', function ($teamQuery) use ($excludeTeamId) {
+                      $teamQuery->where('id', $excludeTeamId);
+                  });
+              });
+        });
+
+        $coaches = $query->select(['id', 'first_name', 'last_name', 'email'])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
