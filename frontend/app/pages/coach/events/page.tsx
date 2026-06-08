@@ -383,6 +383,19 @@ export default function CoachEventsPage() {
             </div>
           </div>
 
+          {form.event_type === "training" && isEditing && (
+            <div className="md:col-span-2 p-4 bg-indigo-50 border border-indigo-150 rounded-xl text-indigo-700 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-semibold mt-2">
+              <span>💡 Aby zarządzać ćwiczeniami (kreator drillów) i sprzętem dla tego treningu, przejdź do zakładki Jednostki Treningowe.</span>
+              <Button
+                type="button"
+                onClick={() => window.location.href = "/pages/coach/training-units"}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 py-1.5 text-[11px] font-bold shadow-sm transition-colors w-fit shrink-0 h-auto"
+              >
+                Otwórz Kreator
+              </Button>
+            </div>
+          )}
+
           <div className="md:col-span-2 flex gap-2 pt-2">
             <Button
               type="submit"
