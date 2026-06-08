@@ -8,6 +8,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TacticController;
+use App\Http\Controllers\MessageController;
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{id}/logo', [TeamController::class, 'logo']);
@@ -34,6 +35,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
+
+    // Trasy czatu / wiadomości
+    Route::get('/messages/contacts', [MessageController::class, 'getContacts']);
+    Route::get('/messages', [MessageController::class, 'getMessages']);
+    Route::post('/messages', [MessageController::class, 'sendMessage']);
+    Route::post('/messages/read', [MessageController::class, 'markAsRead']);
 
     // -----------------------------------------------------
     // Zastrzeżona Strefa Administratora
