@@ -15,7 +15,11 @@ class ApiFootballService
     public function __construct()
     {
         $this->apiKey = env('API_FOOTBALL_KEY');
-        $this->baseUrl = rtrim(env('API_FOOTBALL_URL', 'https://v3.football.api-sports.io/'), '/') . '/';
+        $url = env('API_FOOTBALL_URL');
+        if (empty($url)) {
+            $url = 'https://v3.football.api-sports.io/';
+        }
+        $this->baseUrl = rtrim($url, '/') . '/';
     }
 
     /**
