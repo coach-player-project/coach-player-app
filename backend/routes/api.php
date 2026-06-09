@@ -107,6 +107,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tactics/{id}', [TacticController::class, 'coachShow']);
         Route::put('/tactics/{id}', [TacticController::class, 'coachUpdate']);
         Route::delete('/tactics/{id}', [TacticController::class, 'coachDestroy']);
+
+        // Integracja API-Football
+        Route::get('/api-football/countries', [\App\Http\Controllers\ApiFootballController::class, 'getCountries']);
+        Route::get('/api-football/leagues', [\App\Http\Controllers\ApiFootballController::class, 'getLeagues']);
+        Route::get('/api-football/teams', [\App\Http\Controllers\ApiFootballController::class, 'getTeams']);
+        Route::post('/teams/{team_id}/link-api-football', [\App\Http\Controllers\ApiFootballController::class, 'linkTeam']);
+        Route::post('/teams/{team_id}/unlink-api-football', [\App\Http\Controllers\ApiFootballController::class, 'unlinkTeam']);
+        Route::post('/teams/{team_id}/sync-api-football', [\App\Http\Controllers\ApiFootballController::class, 'syncTeam']);
     });
 
     // -----------------------------------------------------

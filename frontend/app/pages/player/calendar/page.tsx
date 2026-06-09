@@ -23,7 +23,8 @@ import {
   Check, 
   X, 
   Presentation,
-  CalendarDays
+  CalendarDays,
+  Globe
 } from "lucide-react"
 import { TacticalBoard } from "@/components/tactical-board"
 
@@ -48,6 +49,7 @@ type EventItem = {
   player_fatigue_rating?: number | null
   player_fatigue_submitted_at?: string | null
   canvas_data?: string | null
+  api_football_fixture_id?: number | null
   exercises?: {
     id: string
     name: string
@@ -385,7 +387,10 @@ export default function PlayerCalendarPage() {
                             ) : (
                               <Dumbbell className="w-3 h-3 text-indigo-600 shrink-0" />
                             )}
-                            <span className="truncate">{event.title}</span>
+                            <span className="truncate flex-1">{event.title}</span>
+                            {event.api_football_fixture_id && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" title="Zsynchronizowano z API-Football" />
+                            )}
                           </div>
                         )
                       })}
@@ -439,7 +444,7 @@ export default function PlayerCalendarPage() {
               
               {/* Type Badge and Title */}
               <div className="space-y-2">
-                <div>
+                <div className="flex flex-wrap gap-2">
                   {eventDetails.event_type === "match" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-700">
                       Mecz ligowy / towarzyski
@@ -447,6 +452,12 @@ export default function PlayerCalendarPage() {
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-0.5 text-xs font-semibold text-indigo-700">
                       Trening zespołu
+                    </span>
+                  )}
+                  {eventDetails.api_football_fixture_id && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
+                      <Globe className="w-3.5 h-3.5" />
+                      Oficjalny mecz
                     </span>
                   )}
                 </div>
