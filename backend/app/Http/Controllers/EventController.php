@@ -407,6 +407,19 @@ class EventController extends Controller
 
         $event = $this->findEventById($id);
 
+        try {
+            $calendarService = app(\App\Services\GoogleCalendarService::class);
+            if ($calendarService->isConfigured()) {
+                $googleEventId = $calendarService->createEvent($event);
+                if ($googleEventId) {
+                    TrainingSession::where('id', $id)->update(['google_event_id' => $googleEventId]);
+                    $event->google_event_id = $googleEventId;
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Google Calendar creation failed in controller: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Event created successfully.',
             'event' => $event,
@@ -462,6 +475,23 @@ class EventController extends Controller
 
         $event = $this->findEventById($id);
 
+        try {
+            $calendarService = app(\App\Services\GoogleCalendarService::class);
+            if ($calendarService->isConfigured()) {
+                if ($event->google_event_id) {
+                    $calendarService->updateEvent($event);
+                } else {
+                    $googleEventId = $calendarService->createEvent($event);
+                    if ($googleEventId) {
+                        $eventModel->update(['google_event_id' => $googleEventId]);
+                        $event->google_event_id = $googleEventId;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Google Calendar update failed in controller: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Event updated successfully.',
             'event' => $event,
@@ -473,6 +503,15 @@ class EventController extends Controller
         $eventModel = TrainingSession::find($id);
         if (!$eventModel) {
             return response()->json(['message' => 'Event not found.'], 404);
+        }
+
+        try {
+            $calendarService = app(\App\Services\GoogleCalendarService::class);
+            if ($calendarService->isConfigured() && $eventModel->google_event_id) {
+                $calendarService->deleteEvent($eventModel);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Google Calendar delete failed in controller: ' . $e->getMessage());
         }
 
         $eventModel->delete();
