@@ -24,6 +24,7 @@ class TrainingSession extends Model
         'duration_minutes',
         'canvas_data',
         'google_event_id',
+        'api_football_fixture_id',
     ];
 
     protected $casts = [

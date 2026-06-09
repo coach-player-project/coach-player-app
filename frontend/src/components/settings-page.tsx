@@ -55,9 +55,14 @@ export function SettingsPage() {
         } else if (user.role === 'coach' && user.coached_teams) {
           const coachedTeams = user.coached_teams || []
           setTeams(coachedTeams)
-          if (coachedTeams.length > 0 && !selectedTeamId) {
-            setSelectedTeamId(coachedTeams[0].id)
-            setSelectedTeamData(coachedTeams[0])
+          if (coachedTeams.length > 0) {
+            if (!selectedTeamId) {
+              setSelectedTeamId(coachedTeams[0].id)
+              setSelectedTeamData(coachedTeams[0])
+            } else {
+              const updatedTeam = coachedTeams.find((t: any) => t.id === selectedTeamId)
+              setSelectedTeamData(updatedTeam || null)
+            }
           }
         }
       }

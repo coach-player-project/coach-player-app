@@ -18,6 +18,10 @@ class Team extends Model
         'description',
         'coach_id',
         'logo_path',
+        'api_football_team_id',
+        'api_football_league_id',
+        'api_football_season',
+        'api_football_team_name',
     ];
 
     protected $appends = [
