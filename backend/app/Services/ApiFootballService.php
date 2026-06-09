@@ -56,6 +56,8 @@ class ApiFootballService
                 $response = Http::withHeaders($this->getHeaders())
                     ->get($this->baseUrl . 'countries');
 
+                $this->checkAndThrowErrors($response);
+
                 if ($response->successful() && isset($response->json()['response'])) {
                     return $response->json()['response'];
                 }
@@ -64,7 +66,7 @@ class ApiFootballService
                 return [];
             } catch (\Exception $e) {
                 Log::error('API-Football exception fetching countries: ' . $e->getMessage());
-                return [];
+                throw $e;
             }
         });
     }
@@ -88,6 +90,8 @@ class ApiFootballService
                         'country' => $country
                     ]);
 
+                $this->checkAndThrowErrors($response);
+
                 if ($response->successful() && isset($response->json()['response'])) {
                     return $response->json()['response'];
                 }
@@ -96,7 +100,7 @@ class ApiFootballService
                 return [];
             } catch (\Exception $e) {
                 Log::error("API-Football exception fetching leagues for {$country}: " . $e->getMessage());
-                return [];
+                throw $e;
             }
         });
     }
@@ -120,6 +124,8 @@ class ApiFootballService
                         'season' => $season
                     ]);
 
+                $this->checkAndThrowErrors($response);
+
                 if ($response->successful() && isset($response->json()['response'])) {
                     return $response->json()['response'];
                 }
@@ -128,7 +134,7 @@ class ApiFootballService
                 return [];
             } catch (\Exception $e) {
                 Log::error("API-Football exception fetching teams: " . $e->getMessage());
-                return [];
+                throw $e;
             }
         });
     }
@@ -153,6 +159,8 @@ class ApiFootballService
                         'season' => $season
                     ]);
 
+                $this->checkAndThrowErrors($response);
+
                 if ($response->successful() && isset($response->json()['response'])) {
                     return $response->json()['response'];
                 }
@@ -161,7 +169,7 @@ class ApiFootballService
                 return [];
             } catch (\Exception $e) {
                 Log::error("API-Football exception fetching fixtures: " . $e->getMessage());
-                return [];
+                throw $e;
             }
         };
 
@@ -174,5 +182,28 @@ class ApiFootballService
         }
 
         return Cache::remember($cacheKey, now()->addHours(1), $fetchCallback);
+    }
+
+    /**
+     * Check if the API response contains errors and throw an exception.
+     */
+    protected function checkAndThrowErrors(\Illuminate\Http\Client\Response $response)
+    {
+        if ($response->successful()) {
+            $json = $response->json();
+            if (!empty($json['errors'])) {
+                $errors = $json['errors'];
+                if (is_array($errors)) {
+                    $messages = [];
+                    foreach ($errors as $key => $value) {
+                        $messages[] = is_string($key) ? "{$key}: {$value}" : (string)$value;
+                    }
+                    $errStr = implode(', ', $messages);
+                } else {
+                    $errStr = (string)$errors;
+                }
+                throw new \Exception($errStr);
+            }
+        }
     }
 }

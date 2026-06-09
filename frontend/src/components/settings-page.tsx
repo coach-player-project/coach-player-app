@@ -33,7 +33,7 @@ export function SettingsPage() {
 
   const [selectedCountry, setSelectedCountry] = useState('')
   const [selectedLeagueId, setSelectedLeagueId] = useState('')
-  const [selectedSeason, setSelectedSeason] = useState(new Date().getFullYear().toString())
+  const [selectedSeason, setSelectedSeason] = useState('2024')
   const [selectedApiTeamId, setSelectedApiTeamId] = useState('')
   const [importFixtures, setImportFixtures] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -564,11 +564,14 @@ export function SettingsPage() {
                           required
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
-                          {Array.from({ length: 4 }).map((_, idx) => {
-                            const year = (new Date().getFullYear() - idx + 1).toString()
+                          {Array.from({ length: 6 }).map((_, idx) => {
+                            const year = (new Date().getFullYear() - idx).toString()
                             return <option key={year} value={year}>{year}</option>
                           })}
                         </select>
+                        <p className="text-[11px] text-gray-500 leading-tight">
+                          Darmowy plan API-Football obsługuje sezony od 2022 do 2024. Wybierz sezon 2024 dla poprawnych danych testowych.
+                        </p>
                       </div>
                     </div>
 
