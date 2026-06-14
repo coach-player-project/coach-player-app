@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Users2, Plus, Trash2 } from "lucide-react";
 
 type CoachOption = {
   id: string;
@@ -307,13 +308,23 @@ export default function AdminTeamsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-        <h1 className="text-2xl font-bold tracking-tight text-black">Zarządzanie drużynami</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Tworzenie, edycja i usuwanie drużyn w systemie.
-        </p>
+      {/* NAGŁÓWEK STRONY */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Users2 className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Zarządzanie drużynami</h1>
+              <p className="text-blue-200 text-sm md:text-base">Tworzenie, edycja i usuwanie drużyn w systemie.</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={onSubmit} className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border">
+        <h2 className="text-lg font-bold text-black mb-4">{editingId ? "Edytuj drużynę" : "Utwórz nową drużynę"}</h2>
+        <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Input
             placeholder="Nazwa drużyny"
             value={form.name}

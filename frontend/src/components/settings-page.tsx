@@ -100,9 +100,17 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">Moje dane</h1>
-        <p className="text-muted-foreground text-lg">Zarządzaj swoimi danymi osobowymi i ustawieniami konta.</p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <User className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Moje dane</h1>
+              <p className="text-blue-200 text-sm md:text-base">Zarządzaj swoimi danymi osobowymi i ustawieniami konta.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">

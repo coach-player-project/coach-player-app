@@ -39,9 +39,17 @@ export default function CoachPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Pulpit Trenera</h1>
-        <p className="text-gray-500 text-lg">Witaj w panelu głównym. Zarządzaj swoimi zawodnikami i planuj kolejne kroki.</p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Users className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">Pulpit Trenera</h1>
+              <p className="text-blue-200 text-sm md:text-base">Witaj w panelu głównym. Zarządzaj swoimi zawodnikami i planuj kolejne kroki.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

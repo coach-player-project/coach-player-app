@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle, UserPlus } from "lucide-react";
 
 type TeamRef = { id: string; name: string };
 type UserRef = {
@@ -94,33 +94,41 @@ export default function AdminMembershipsPage() {
   }
 
   return (
-    <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-black">
-          Zgłoszenia do drużyn
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Zaakceptuj lub odrzuć prośby o dołączenie do wybranej drużyny.
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* NAGŁÓWEK STRONY */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <UserPlus className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Zgłoszenia do drużyn</h1>
+              <p className="text-blue-200 text-sm md:text-base">Zaakceptuj lub odrzuć prośby o dołączenie do wybranej drużyny.</p>
+            </div>
+          </div>
           {meta.total > 0 && (
-            <span className="ml-1 font-medium text-amber-600">
-              Oczekujących: {meta.total}
-            </span>
+            <div className="shrink-0">
+              <Badge className="bg-amber-500/25 text-amber-200 border-amber-500/30 hover:bg-amber-500/30 px-3 py-1.5 text-sm shadow-none font-medium">
+                Oczekujących: {meta.total}
+              </Badge>
+            </div>
           )}
-        </p>
+        </div>
       </div>
 
-      {message && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          {message}
-        </div>
-      )}
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border">
+        {message && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            {message}
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </div>
+        )}
 
-      <div className="border border-border rounded-lg overflow-hidden bg-card">
+        <div className="border border-border rounded-lg overflow-hidden bg-card">
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
@@ -226,6 +234,7 @@ export default function AdminMembershipsPage() {
           </Button>
         </div>
       )}
+      </div>
     </div>
   );
 }
