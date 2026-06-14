@@ -263,19 +263,19 @@ export default function PlayerCalendarPage() {
       )}
 
       {/* Monthly Calendar Component */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/40 p-6 space-y-6">
+      <div className="bg-card rounded-2xl border border-border shadow-xl dark:shadow-none p-6 space-y-6">
         
         {/* Navigation & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-700">
+            <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 dark:text-blue-400">
               <Calendar className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Kliknij na wydarzenie, aby zarządzać obecnością i szczegółami.
               </p>
             </div>
@@ -286,15 +286,15 @@ export default function PlayerCalendarPage() {
               variant="outline"
               size="sm"
               onClick={handlePrevMonth}
-              className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 w-10 p-0 flex items-center justify-center"
+              className="rounded-xl border-border hover:bg-accent text-foreground h-10 w-10 p-0 flex items-center justify-center"
             >
-              <ChevronLeft className="h-5 w-5 text-gray-650" />
+              <ChevronLeft className="h-5 w-5 text-muted-foreground" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentDate(new Date())}
-              className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 px-4 font-semibold text-sm"
+              className="rounded-xl border-border hover:bg-accent text-foreground h-10 px-4 font-semibold text-sm"
             >
               Dzisiaj
             </Button>
@@ -302,9 +302,9 @@ export default function PlayerCalendarPage() {
               variant="outline"
               size="sm"
               onClick={handleNextMonth}
-              className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 w-10 p-0 flex items-center justify-center"
+              className="rounded-xl border-border hover:bg-accent text-foreground h-10 w-10 p-0 flex items-center justify-center"
             >
-              <ChevronRight className="h-5 w-5 text-gray-650" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -312,7 +312,7 @@ export default function PlayerCalendarPage() {
         {/* Grid Calendar Layout */}
         <div className="space-y-1">
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 text-center font-bold text-xs uppercase tracking-wider text-gray-400 py-2">
+          <div className="grid grid-cols-7 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-2">
             {WEEKDAY_NAMES.map(name => (
               <div key={name} className="py-2">{name}</div>
             ))}
@@ -320,16 +320,16 @@ export default function PlayerCalendarPage() {
 
           {/* Days Grid */}
           {loading ? (
-            <div className="h-96 flex flex-col items-center justify-center gap-3 text-gray-400 border border-gray-100 rounded-2xl">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />
-              <span className="text-sm font-medium">Ładowanie kalendarza...</span>
+            <div className="h-96 flex flex-col items-center justify-center gap-3 text-muted-foreground border border-border rounded-2xl bg-card">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+              <span className="text-sm font-medium text-muted-foreground">Ładowanie kalendarza...</span>
             </div>
           ) : (
             <div className="grid grid-cols-7 gap-1.5 md:gap-3">
               {calendarCells.map((day, idx) => {
                 if (day === null) {
                   return (
-                    <div key={`empty-${idx}`} className="bg-gray-50/20 border border-transparent rounded-2xl aspect-square md:aspect-auto md:min-h-[110px]" />
+                    <div key={`empty-${idx}`} className="bg-muted/10 border border-transparent rounded-2xl aspect-square md:aspect-auto md:min-h-[110px]" />
                   )
                 }
 
@@ -341,21 +341,21 @@ export default function PlayerCalendarPage() {
                     key={`day-${day}`}
                     className={`border rounded-2xl p-2 md:p-3 aspect-square md:aspect-auto md:min-h-[110px] flex flex-col justify-between transition-all duration-200 ${
                       currentIsToday 
-                        ? "bg-emerald-50/30 border-emerald-500 shadow-sm" 
-                        : "bg-white border-gray-100 hover:border-gray-300"
+                        ? "bg-blue-500/10 border-blue-500 shadow-sm dark:bg-blue-500/25" 
+                        : "bg-card border-border hover:border-muted-foreground/30 hover:bg-accent/50"
                     }`}
                   >
                     {/* Day number */}
                     <div className="flex justify-between items-center">
                       <span className={`text-xs md:text-sm font-bold flex items-center justify-center w-6 h-6 rounded-full ${
                         currentIsToday 
-                          ? "bg-emerald-600 text-white shadow-sm" 
-                          : "text-gray-700"
+                          ? "bg-blue-600 text-white shadow-sm dark:bg-blue-500" 
+                          : "text-foreground"
                       }`}>
                         {day}
                       </span>
                       {dayEvents.length > 0 && (
-                        <span className="text-[10px] font-extrabold text-gray-405 md:hidden">
+                        <span className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 md:hidden">
                           ● {dayEvents.length}
                         </span>
                       )}
@@ -367,10 +367,10 @@ export default function PlayerCalendarPage() {
                         const isMatch = event.event_type === "match"
                         const statusColor = 
                           event.attendance_status === "obecny"
-                            ? "border-l-green-500 bg-green-50/20 text-green-800"
+                            ? "border-l-green-500 bg-green-500/10 text-green-700 dark:text-green-300 dark:bg-green-500/20"
                             : event.attendance_status === "nieobecny"
-                            ? "border-l-rose-500 bg-rose-50/20 text-rose-800"
-                            : "border-l-gray-400 bg-gray-50/50 text-gray-600"
+                            ? "border-l-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-350 dark:bg-rose-500/20"
+                            : "border-l-muted-foreground bg-muted/20 text-muted-foreground"
 
                         return (
                           <div
@@ -380,9 +380,9 @@ export default function PlayerCalendarPage() {
                             title={event.title}
                           >
                             {isMatch ? (
-                              <Trophy className="w-3 h-3 text-blue-600 shrink-0" />
+                              <Trophy className="w-3 h-3 text-blue-500 dark:text-blue-400 shrink-0" />
                             ) : (
-                              <Dumbbell className="w-3 h-3 text-indigo-600 shrink-0" />
+                              <Dumbbell className="w-3 h-3 text-indigo-500 dark:text-indigo-400 shrink-0" />
                             )}
                             <span className="truncate">{event.title}</span>
                           </div>

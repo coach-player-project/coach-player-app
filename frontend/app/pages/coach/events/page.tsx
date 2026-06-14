@@ -526,7 +526,7 @@ export default function CoachEventsPage() {
         {error && <div className="mt-3 bg-red-50 border border-red-150 text-red-800 p-4 rounded-xl text-sm font-medium">{error}</div>}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-100/40 p-6 space-y-6">
+      <div className="bg-card rounded-2xl border border-border shadow-xl dark:shadow-none p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
           <div className="relative w-full md:max-w-md">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -744,9 +744,9 @@ export default function CoachEventsPage() {
         ) : (
           /* Calendar Month Grid */
           <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-gray-900">
+                <span className="text-xl font-bold text-foreground">
                   {monthNames[currentMonth]} {currentYear}
                 </span>
               </div>
@@ -755,15 +755,15 @@ export default function CoachEventsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setCalendarDate(new Date(currentYear, currentMonth - 1, 1))}
-                  className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 w-10 p-0 flex items-center justify-center"
+                  className="rounded-xl border-border hover:bg-accent text-foreground h-10 w-10 p-0 flex items-center justify-center"
                 >
-                  <ChevronLeft className="h-5 w-5 text-gray-600" />
+                  <ChevronLeft className="h-5 w-5 text-muted-foreground" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCalendarDate(new Date())}
-                  className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 px-4 font-semibold text-sm"
+                  className="rounded-xl border-border hover:bg-accent text-foreground h-10 px-4 font-semibold text-sm"
                 >
                   Dzisiaj
                 </Button>
@@ -771,31 +771,31 @@ export default function CoachEventsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setCalendarDate(new Date(currentYear, currentMonth + 1, 1))}
-                  className="rounded-xl border-gray-200 hover:bg-gray-50 h-10 w-10 p-0 flex items-center justify-center"
+                  className="rounded-xl border-border hover:bg-accent text-foreground h-10 w-10 p-0 flex items-center justify-center"
                 >
-                  <ChevronRight className="h-5 w-5 text-gray-600" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="grid grid-cols-7 text-center font-bold text-xs uppercase tracking-wider text-gray-400 py-2">
+              <div className="grid grid-cols-7 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground py-2">
                 {weekdayNames.map((name) => (
                   <div key={name} className="py-2">{name}</div>
                 ))}
               </div>
 
               {loading ? (
-                <div className="h-96 flex flex-col items-center justify-center gap-3 text-gray-400">
+                <div className="h-96 flex flex-col items-center justify-center gap-3 text-muted-foreground">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                  <span className="text-sm font-medium">Ładowanie kalendarza...</span>
+                  <span className="text-sm font-medium text-muted-foreground">Ładowanie kalendarza...</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-1.5 md:gap-3">
                   {calendarCells.map((day, idx) => {
                     if (day === null) {
                       return (
-                        <div key={`empty-${idx}`} className="bg-gray-50/20 border border-transparent rounded-2xl aspect-square md:aspect-auto md:min-h-[110px]" />
+                        <div key={`empty-${idx}`} className="bg-muted/10 border border-transparent rounded-2xl aspect-square md:aspect-auto md:min-h-[110px]" />
                       );
                     }
 
@@ -816,20 +816,20 @@ export default function CoachEventsPage() {
                         }}
                         className={`border rounded-2xl p-2 md:p-3 aspect-square md:aspect-auto md:min-h-[110px] flex flex-col justify-between transition-all duration-200 cursor-pointer ${
                           currentIsToday
-                            ? "bg-blue-50/30 border-blue-500 shadow-sm"
-                            : "bg-white border-gray-100 hover:border-gray-300"
+                            ? "bg-blue-500/10 border-blue-500 shadow-sm dark:bg-blue-500/25"
+                            : "bg-card border-border hover:border-muted-foreground/30 hover:bg-accent/50"
                         }`}
                       >
                         <div className="flex justify-between items-center">
                           <span className={`text-xs md:text-sm font-bold flex items-center justify-center w-6 h-6 rounded-full ${
                             currentIsToday
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-gray-700"
+                              ? "bg-blue-600 text-white shadow-sm dark:bg-blue-500"
+                              : "text-foreground"
                           }`}>
                             {day}
                           </span>
                           {dayEvents.length > 0 && (
-                            <span className="text-[10px] font-extrabold text-gray-400 md:hidden">
+                            <span className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 md:hidden">
                               ● {dayEvents.length}
                             </span>
                           )}
@@ -840,8 +840,8 @@ export default function CoachEventsPage() {
                           {dayEvents.slice(0, 3).map((event) => {
                             const isMatch = event.event_type === "match";
                             const eventBg = isMatch
-                              ? "bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100"
-                              : "bg-indigo-50 border-indigo-100 text-indigo-700 hover:bg-indigo-100";
+                              ? "bg-blue-500/10 border-blue-200/50 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
+                              : "bg-indigo-500/10 border-indigo-200/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20";
 
                             return (
                               <div
@@ -854,9 +854,9 @@ export default function CoachEventsPage() {
                                 title={event.title}
                               >
                                 {isMatch ? (
-                                  <Trophy className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                  <Trophy className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
                                 ) : (
-                                  <Dumbbell className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <Dumbbell className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                                 )}
                                 <span className="truncate">{event.title}</span>
                               </div>

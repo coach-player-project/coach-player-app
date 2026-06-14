@@ -9,10 +9,10 @@ export default function PlayerLayout({ children }: { children: React.ReactNode }
       <SidebarProvider>
       <PlayerSidebar />
       <main className="w-full flex-1 bg-background text-foreground">
-        <div className="h-16 px-6 border-b border-border bg-black text-white flex items-center justify-between sticky top-0 z-10">
+        <div className="h-16 px-6 border-b border-border bg-card text-foreground flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
-            <SidebarTrigger className="-ml-2 text-white hover:text-gray-200" />
-            <h2 className="font-semibold text-lg text-white">Panel Zawodnika</h2>
+            <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-foreground" />
+            <h2 className="font-semibold text-lg text-foreground">Panel Zawodnika</h2>
           </div>
           <ModeToggle />
         </div>
