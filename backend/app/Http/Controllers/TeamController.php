@@ -140,6 +140,11 @@ class TeamController extends Controller
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
+        $coachIds = collect($validatedData['coaches'])->pluck('user_id');
+        if ($coachIds->duplicates()->isNotEmpty()) {
+            return response()->json(['message' => 'Ten sam trener nie może być przypisany do drużyny więcej niż jeden raz.'], 422);
+        }
+
         $headCoachesCount = collect($validatedData['coaches'])->where('role', 'Główny trener')->count();
         if ($headCoachesCount !== 1) {
             return response()->json(['message' => 'Drużyna musi mieć dokładnie jednego Głównego trenera.'], 422);
@@ -289,6 +294,11 @@ class TeamController extends Controller
         ]);
 
         if (array_key_exists('coaches', $validatedData)) {
+            $coachIds = collect($validatedData['coaches'])->pluck('user_id');
+            if ($coachIds->duplicates()->isNotEmpty()) {
+                return response()->json(['message' => 'Ten sam trener nie może być przypisany do drużyny więcej niż jeden raz.'], 422);
+            }
+
             $headCoachesCount = collect($validatedData['coaches'])->where('role', 'Główny trener')->count();
             if ($headCoachesCount !== 1) {
                 return response()->json(['message' => 'Drużyna musi mieć dokładnie jednego Głównego trenera.'], 422);

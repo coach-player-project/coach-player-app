@@ -199,6 +199,14 @@ export default function AdminTeamsPage() {
       return;
     }
 
+    const coachIds = form.coaches.map(c => c.user_id);
+    const hasDuplicates = coachIds.some((id, index) => coachIds.indexOf(id) !== index);
+    if (hasDuplicates) {
+      setError("Ten sam trener nie może być przypisany do drużyny więcej niż jeden raz.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       const url = buildApiUrl(isEditing ? `/admin/teams/${editingId}` : "/admin/teams");
