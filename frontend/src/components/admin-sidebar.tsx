@@ -53,7 +53,7 @@ export function AdminSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sm font-semibold tracking-wider text-gray-500 uppercase mt-4 mb-2">
+          <SidebarGroupLabel className="text-sm font-semibold tracking-wider text-muted-foreground uppercase mt-4 mb-2">
             Panel Administratora
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -61,7 +61,7 @@ export function AdminSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url} className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50/50 rounded-md transition-all">
+                    <Link href={item.url} className="flex items-center gap-3 px-3 py-2 text-foreground/80 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20 rounded-md transition-all">
                       <item.icon className="h-5 w-5" />
                       <span className="font-medium">{item.title}</span>
                     </Link>

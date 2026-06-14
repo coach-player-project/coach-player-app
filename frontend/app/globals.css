@@ -83,13 +83,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -128,6 +121,52 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.627 0.194 149.214);
+
+  /* Global dark-theme overrides for pages with hardcoded light styles */
+  .bg-white {
+    background-color: var(--card) !important;
+  }
+  .bg-gray-50 {
+    background-color: var(--background) !important;
+  }
+  .bg-gray-100 {
+    background-color: var(--muted) !important;
+  }
+  .text-gray-900 {
+    color: var(--foreground) !important;
+  }
+  .text-gray-800 {
+    color: var(--foreground) !important;
+  }
+  .text-gray-700 {
+    color: var(--foreground) !important;
+  }
+  .text-gray-600 {
+    color: var(--muted-foreground) !important;
+  }
+  .text-gray-500 {
+    color: var(--muted-foreground) !important;
+  }
+  .border-gray-100 {
+    border-color: var(--border) !important;
+  }
+  .border-gray-200 {
+    border-color: var(--border) !important;
+  }
+  .border-gray-300 {
+    border-color: var(--border) !important;
+  }
+  .hover\:bg-gray-50:hover {
+    background-color: var(--muted) !important;
+  }
+  
+  /* Premium contrast for input fields on cards in dark mode */
+  input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  select {
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
+  }
 }
 
 @layer base {

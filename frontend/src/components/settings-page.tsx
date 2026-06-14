@@ -1,10 +1,13 @@
 "use client"
 
-import { User, Mail, Phone, Lock, Loader2, CheckCircle2 } from "lucide-react"
+import { User, Mail, Phone, Lock, Loader2, CheckCircle2, Sun, Moon, Laptop } from "lucide-react"
 import { useState, useEffect } from "react"
 import { apiFetch } from "@/lib/api"
+import { useTheme } from "next-themes"
 
 export function SettingsPage() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -19,6 +22,10 @@ export function SettingsPage() {
 
   const [userRole, setUserRole] = useState<string>('')
   const [teams, setTeams] = useState<any[]>([])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     async function loadData() {
@@ -89,112 +96,175 @@ export function SettingsPage() {
     )
   }
 
+  const activeTheme = mounted ? theme : "system"
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Moje dane</h1>
-        <p className="text-gray-500 text-lg">Zarządzaj swoimi danymi osobowymi i ustawieniami konta.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">Moje dane</h1>
+        <p className="text-muted-foreground text-lg">Zarządzaj swoimi danymi osobowymi i ustawieniami konta.</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
 
           {message && (
-            <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
               {message.type === 'success' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
               <span className="font-medium">{message.text}</span>
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row gap-6 border-b border-gray-100 pb-6">
-            <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center shrink-0 mx-auto md:mx-0">
-              <User className="w-10 h-10 text-gray-400" />
+          <div className="flex flex-col md:flex-row gap-6 border-b border-border pb-6">
+            <div className="w-24 h-24 rounded-full bg-muted border-2 border-border flex items-center justify-center shrink-0 mx-auto md:mx-0">
+              <User className="w-10 h-10 text-muted-foreground" />
             </div>
             <div className="flex-1 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Imię</label>
-                  <input type="text" name="first_name" required value={formData.first_name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  <label className="text-sm font-medium text-foreground/80">Imię</label>
+                  <input type="text" name="first_name" required value={formData.first_name} onChange={handleChange} className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Nazwisko</label>
-                  <input type="text" name="last_name" required value={formData.last_name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  <label className="text-sm font-medium text-foreground/80">Nazwisko</label>
+                  <input type="text" name="last_name" required value={formData.last_name} onChange={handleChange} className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4 border-b border-gray-100 pb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Dane kontaktowe</h3>
+          <div className="space-y-4 border-b border-border pb-6">
+            <h3 className="text-lg font-semibold text-foreground">Dane kontaktowe</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
+                <label className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
                   Email
                 </label>
-                <input type="email" value={formData.email} className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed text-gray-500 focus:outline-none" disabled title="Nie można zmienić adresu email." />
+                <input type="email" value={formData.email} className="w-full px-4 py-2 border border-border rounded-lg bg-muted/50 cursor-not-allowed text-muted-foreground focus:outline-none" disabled title="Nie można zmienić adresu email." />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
+                <label className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
                   Telefon
                 </label>
-                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="+48 123 456 789" />
+                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="+48 123 456 789" />
               </div>
+            </div>
+          </div>
+
+          {/* Sekcja wyboru motywu */}
+          <div className="space-y-4 border-b border-border pb-6">
+            <h3 className="text-lg font-semibold text-foreground">Motyw aplikacji</h3>
+            <p className="text-sm text-muted-foreground">Wybierz preferowany wygląd interfejsu aplikacji.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left cursor-pointer ${
+                  activeTheme === "light"
+                    ? "border-green-500 bg-green-500/5 ring-2 ring-green-500/20"
+                    : "border-border bg-transparent hover:bg-muted/50"
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${activeTheme === "light" ? "bg-green-500/15 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                  <Sun className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Jasny</p>
+                  <p className="text-xs text-muted-foreground">Tradycyjny jasny wygląd</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left cursor-pointer ${
+                  activeTheme === "dark"
+                    ? "border-green-500 bg-green-500/5 ring-2 ring-green-500/20"
+                    : "border-border bg-transparent hover:bg-muted/50"
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${activeTheme === "dark" ? "bg-green-500/15 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                  <Moon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Ciemny</p>
+                  <p className="text-xs text-muted-foreground">Łagodny dla oczu</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme("system")}
+                className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left cursor-pointer ${
+                  activeTheme === "system"
+                    ? "border-green-500 bg-green-500/5 ring-2 ring-green-500/20"
+                    : "border-border bg-transparent hover:bg-muted/50"
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${activeTheme === "system" ? "bg-green-500/15 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                  <Laptop className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Systemowy</p>
+                  <p className="text-xs text-muted-foreground">Zgodny z systemem</p>
+                </div>
+              </button>
             </div>
           </div>
 
           {userRole === 'player' && (
-            <div className="space-y-4 border-b border-gray-100 pb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Moje kluby / drużyny</h3>
+            <div className="space-y-4 border-b border-border pb-6">
+              <h3 className="text-lg font-semibold text-foreground">Moje kluby / drużyny</h3>
               <div className="space-y-2">
                 {teams.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {teams.map((team: any) => (
-                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
                         {team.name}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Nie należysz obecnie do żadnego zatwierdzonego klubu.</p>
+                  <p className="text-sm text-muted-foreground italic">Nie należysz obecnie do żadnego zatwierdzonego klubu.</p>
                 )}
               </div>
             </div>
           )}
 
           {userRole === 'coach' && (
-            <div className="space-y-4 border-b border-gray-100 pb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Prowadzone drużyny</h3>
+            <div className="space-y-4 border-b border-border pb-6">
+              <h3 className="text-lg font-semibold text-foreground">Prowadzone drużyny</h3>
               <div className="space-y-2">
                 {teams.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {teams.map((team: any) => (
-                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25">
                         {team.name}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Nie masz przypisanych żadnych prowadzonych drużyn.</p>
+                  <p className="text-sm text-muted-foreground italic">Nie masz przypisanych żadnych prowadzonych drużyn.</p>
                 )}
               </div>
             </div>
           )}
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Bezpieczeństwo</h3>
+            <h3 className="text-lg font-semibold text-foreground">Bezpieczeństwo</h3>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Lock className="w-4 h-4 text-gray-400" />
+              <label className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
                 Nowe hasło
               </label>
-              <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Wpisz nowe hasło (pozostaw puste, aby nie zmieniać)" />
+              <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Wpisz nowe hasło (pozostaw puste, aby nie zmieniać)" />
             </div>
           </div>
 
           <div className="pt-4 flex justify-end">
-            <button type="submit" disabled={saving} className={`px-6 py-2.5 bg-gray-900 text-white font-medium rounded-lg transition-colors flex items-center gap-2 ${saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-800'}`}>
+            <button type="submit" disabled={saving} className={`px-6 py-2.5 bg-foreground text-background font-medium rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-foreground/90'}`}>
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               {saving ? 'Zapisywanie...' : 'Zapisz zmiany'}
             </button>

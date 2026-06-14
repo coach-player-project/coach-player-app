@@ -36,12 +36,12 @@ export function LogoutButton() {
   }
 
   return (
-    <SidebarMenuItem className="mt-4 border-t border-gray-100 pt-2">
+    <SidebarMenuItem className="mt-4 border-t border-border pt-2">
       <SidebarMenuButton asChild>
         <button
           onClick={handleLogout}
           disabled={loading}
-          className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50/50 rounded-md transition-all cursor-pointer font-medium disabled:opacity-50"
+          className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 rounded-md transition-all cursor-pointer font-medium disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
           <span>{loading ? "Wylogowywanie..." : "Wyloguj się"}</span>
