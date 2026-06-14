@@ -16,12 +16,12 @@ class Team extends Model
     protected $fillable = [
         'name',
         'description',
-        'coach_id',
         'logo_path',
     ];
 
     protected $appends = [
         'logo_url',
+        'coach',
     ];
 
     /**
@@ -33,11 +33,21 @@ class Team extends Model
     }
 
     /**
-     * Get the coach associated with the team.
+     * Get the head coach (backward compatibility).
      */
-    public function coach(): BelongsTo
+    public function getCoachAttribute()
     {
-        return $this->belongsTo(User::class, 'coach_id');
+        return $this->coaches()->wherePivot('role', 'Główny trener')->first();
+    }
+
+    /**
+     * Get the coaches associated with the team.
+     */
+    public function coaches(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'team_coaches')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     public function trainingSessions()

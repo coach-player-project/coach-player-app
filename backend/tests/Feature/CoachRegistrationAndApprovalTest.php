@@ -38,8 +38,16 @@ class CoachRegistrationAndApprovalTest extends TestCase
             'id' => $teamId,
             'name' => 'KS Fikcyjny Klub',
             'description' => 'Testowy klub',
-            'coach_id' => $dummyCoach->id,
             'created_at' => now(),
+        ]);
+
+        DB::table('team_coaches')->insert([
+            'id' => (string) Str::uuid(),
+            'team_id' => $teamId,
+            'user_id' => $dummyCoach->id,
+            'role' => 'Główny trener',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $teamRecord = DB::table('teams')->first();
@@ -70,9 +78,14 @@ class CoachRegistrationAndApprovalTest extends TestCase
         $this->assertEquals('pending', $membership->status);
         $this->assertEquals($teamId, $membership->team_id);
 
-        // Verify team does NOT have coach_id set to the new coach yet (it should still be dummy coach)
-        $updatedTeam = DB::table('teams')->where('id', $teamId)->first();
-        $this->assertEquals($dummyCoach->id, $updatedTeam->coach_id);
+        // Verify team does NOT have new coach assigned yet (the only coach in team_coaches is dummyCoach)
+        $teamCoachesCount = DB::table('team_coaches')->where('team_id', $teamId)->count();
+        $this->assertEquals(1, $teamCoachesCount);
+        $headCoachId = DB::table('team_coaches')
+            ->where('team_id', $teamId)
+            ->where('role', 'Główny trener')
+            ->value('user_id');
+        $this->assertEquals($dummyCoach->id, $headCoachId);
 
         // 4. Authenticate as admin and view pending memberships
         \Laravel\Sanctum\Sanctum::actingAs($admin);
@@ -90,14 +103,18 @@ class CoachRegistrationAndApprovalTest extends TestCase
 
         $approveResponse->assertStatus(200);
 
-        // 6. Verify membership is approved and team's coach_id is set
+        // 6. Verify membership is approved and team's coaches list is updated (jan becomes Asystent)
         $updatedMembership = DB::table('team_members')
             ->where('id', $membership->id)
             ->first();
         $this->assertEquals('approved', $updatedMembership->status);
 
-        $finalTeam = DB::table('teams')->where('id', $teamId)->first();
-        $this->assertEquals($coach->id, $finalTeam->coach_id);
+        $isJanCoach = DB::table('team_coaches')
+            ->where('team_id', $teamId)
+            ->where('user_id', $coach->id)
+            ->where('role', 'Asystent')
+            ->exists();
+        $this->assertTrue($isJanCoach);
 
         // 7. Verify coach can now access their team
         \Laravel\Sanctum\Sanctum::actingAs($coach);

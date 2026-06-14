@@ -234,8 +234,8 @@ class FatigueRatingController extends Controller
         $sortDir  = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         // Pobierz IDs treningów z drużyn należących do trenera
-        $trainingIds = TrainingSession::whereHas('team', function ($q) use ($coach) {
-            $q->where('coach_id', $coach->id);
+        $trainingIds = TrainingSession::whereHas('team.coaches', function ($q) use ($coach) {
+            $q->where('users.id', $coach->id);
         })->pluck('id');
 
         $query = FatigueRating::with(['user', 'trainingSession.team'])

@@ -52,14 +52,22 @@ class MessageController extends Controller
             }
 
             // Coaches of those teams
-            $coachIds = $teams->pluck('coach_id')->filter()->unique();
+            $coachIds = \Illuminate\Support\Facades\DB::table('team_coaches')
+                ->whereIn('team_id', $teamIds)
+                ->pluck('user_id')
+                ->filter()
+                ->unique();
             $coaches = User::query()
                 ->whereIn('id', $coachIds)
                 ->get(['id', 'first_name', 'last_name', 'email', 'avatar_url', 'role']);
 
             foreach ($coaches as $coach) {
                 // Find teams the coach coaches that this player is in
-                $coachTeams = $teams->where('coach_id', $coach->id)->pluck('name')->implode(', ');
+                $coachTeamIds = \Illuminate\Support\Facades\DB::table('team_coaches')
+                    ->where('user_id', $coach->id)
+                    ->whereIn('team_id', $teamIds)
+                    ->pluck('team_id');
+                $coachTeams = $teams->whereIn('id', $coachTeamIds)->pluck('name')->implode(', ');
                 $directs[] = [
                     'id' => $coach->id,
                     'first_name' => $coach->first_name,
@@ -71,9 +79,10 @@ class MessageController extends Controller
                     'unread_count' => $unreadCounts[$coach->id] ?? 0,
                 ];
             }
-        } elseif ($user->role === 'coach') {
             // Coach coaches teams
-            $teams = Team::query()->where('coach_id', $user->id)->get();
+            $teams = Team::query()->whereHas('coaches', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })->get();
             $teamIds = $teams->pluck('id');
 
             foreach ($teams as $team) {
@@ -156,13 +165,17 @@ class MessageController extends Controller
                     ->where('user_id', $user->id)
                     ->where('status', TeamMember::STATUS_APPROVED)
                     ->pluck('team_id');
-                $coachIds = Team::query()->whereIn('id', $teamIds)->pluck('coach_id');
+                $coachIds = \Illuminate\Support\Facades\DB::table('team_coaches')
+                    ->whereIn('team_id', $teamIds)
+                    ->pluck('user_id');
                 if ($coachIds->contains($otherUserId)) {
                     $canChat = true;
                 }
             } elseif ($user->role === 'coach') {
                 // Recipient must be a player in one of the coach's teams
-                $teamIds = Team::query()->where('coach_id', $user->id)->pluck('id');
+                $teamIds = Team::query()->whereHas('coaches', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })->pluck('id');
                 $isMember = TeamMember::query()
                     ->whereIn('team_id', $teamIds)
                     ->where('user_id', $otherUserId)
@@ -210,7 +223,7 @@ class MessageController extends Controller
             // Verify if user is part of the team
             $canChat = false;
             if ($user->role === 'coach') {
-                if ($team->coach_id === $user->id) {
+                if ($team->coaches()->where('users.id', $user->id)->exists()) {
                     $canChat = true;
                 }
             } elseif ($user->role === 'player') {
@@ -272,12 +285,16 @@ class MessageController extends Controller
                     ->where('user_id', $user->id)
                     ->where('status', TeamMember::STATUS_APPROVED)
                     ->pluck('team_id');
-                $coachIds = Team::query()->whereIn('id', $teamIds)->pluck('coach_id');
+                $coachIds = \Illuminate\Support\Facades\DB::table('team_coaches')
+                    ->whereIn('team_id', $teamIds)
+                    ->pluck('user_id');
                 if ($coachIds->contains($receiverId)) {
                     $canChat = true;
                 }
             } elseif ($user->role === 'coach') {
-                $teamIds = Team::query()->where('coach_id', $user->id)->pluck('id');
+                $teamIds = Team::query()->whereHas('coaches', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })->pluck('id');
                 $isMember = TeamMember::query()
                     ->whereIn('team_id', $teamIds)
                     ->where('user_id', $receiverId)
@@ -310,7 +327,7 @@ class MessageController extends Controller
 
             $canChat = false;
             if ($user->role === 'coach') {
-                if ($team->coach_id === $user->id) {
+                if ($team->coaches()->where('users.id', $user->id)->exists()) {
                     $canChat = true;
                 }
             } elseif ($user->role === 'player') {

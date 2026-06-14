@@ -24,7 +24,7 @@ type TeamItem = {
   id: string;
   name: string;
   description: string | null;
-  coach_id: string;
+  coach_id?: string;
   created_at: string;
   logo_url?: string;
   coach?: {
@@ -33,6 +33,15 @@ type TeamItem = {
     last_name: string;
     email: string;
   } | null;
+  coaches?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    pivot?: {
+      role: string;
+    };
+  }[];
 };
 
 type TeamsResponse = {
@@ -43,21 +52,28 @@ type TeamsResponse = {
   last_page: number;
 };
 
+type AssignedCoach = {
+  user_id: string;
+  role: string;
+};
+
 type TeamFormState = {
   name: string;
   description: string;
-  coach_id: string;
+  coaches: AssignedCoach[];
 };
 
 const initialForm: TeamFormState = {
   name: "",
   description: "",
-  coach_id: "",
+  coaches: [{ user_id: "", role: "Główny trener" }],
 };
 
-function fullCoachName(coach?: TeamItem["coach"]) {
-  if (!coach) return "Brak przypisanego";
-  return `${coach.first_name} ${coach.last_name}`;
+function formatCoachesList(coaches?: TeamItem["coaches"]) {
+  if (!coaches || coaches.length === 0) return "Brak przypisanego sztabu";
+  return coaches
+    .map((c) => `${c.first_name} ${c.last_name} (${c.pivot?.role ?? "Główny trener"})`)
+    .join(", ");
 }
 
 export default function AdminTeamsPage() {
@@ -128,10 +144,16 @@ export default function AdminTeamsPage() {
       setCoaches(coachData);
 
       setForm((prev) => {
-        if (prev.coach_id || coachData.length === 0) {
+        if (prev.coaches.length > 0 && prev.coaches[0].user_id) {
           return prev;
         }
-        return { ...prev, coach_id: coachData[0].id };
+        if (coachData.length > 0) {
+          return {
+            ...prev,
+            coaches: [{ user_id: coachData[0].id, role: "Główny trener" }]
+          };
+        }
+        return prev;
       });
     } catch {
       setCoaches([]);
@@ -149,10 +171,7 @@ export default function AdminTeamsPage() {
   }, []);
 
   function resetForm() {
-    setForm({
-      ...initialForm,
-      coach_id: "",
-    });
+    setForm(initialForm);
     setEditingId(null);
     setLogoFile(null);
     setLogoPreview(null);
@@ -167,6 +186,19 @@ export default function AdminTeamsPage() {
     setError(null);
     setMessage(null);
 
+    const headCoaches = form.coaches.filter(c => c.role === "Główny trener");
+    if (headCoaches.length !== 1) {
+      setError("Drużyna musi mieć dokładnie jednego Głównego trenera.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (form.coaches.some(c => !c.user_id)) {
+      setError("Wszyscy przypisani trenerzy muszą być wybrani.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       const url = buildApiUrl(isEditing ? `/admin/teams/${editingId}` : "/admin/teams");
@@ -174,7 +206,11 @@ export default function AdminTeamsPage() {
       const formData = new FormData();
       formData.append("name", form.name.trim());
       formData.append("description", form.description.trim());
-      formData.append("coach_id", form.coach_id.trim());
+      
+      form.coaches.forEach((c, index) => {
+        formData.append(`coaches[${index}][user_id]`, c.user_id);
+        formData.append(`coaches[${index}][role]`, c.role);
+      });
 
       if (logoFile) {
         formData.append("logo", logoFile);
@@ -225,10 +261,15 @@ export default function AdminTeamsPage() {
   function onEdit(team: TeamItem) {
     setEditingId(team.id);
     void loadCoaches(team.id);
+    
+    const mappedCoaches = team.coaches && team.coaches.length > 0
+      ? team.coaches.map(c => ({ user_id: c.id, role: c.pivot?.role ?? "Główny trener" }))
+      : [{ user_id: team.coach_id ?? "", role: "Główny trener" }];
+
     setForm({
       name: team.name ?? "",
       description: team.description ?? "",
-      coach_id: team.coach_id ?? "",
+      coaches: mappedCoaches,
     });
     setExistingLogoUrl(team.logo_url ?? null);
     setLogoFile(null);
@@ -271,23 +312,81 @@ export default function AdminTeamsPage() {
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             required
           />
-          <select
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
-            value={form.coach_id}
-            onChange={(e) => setForm((prev) => ({ ...prev, coach_id: e.target.value }))}
-            required
-            disabled={coachesLoading || coaches.length === 0}
-          >
-            {coaches.length === 0 ? (
-              <option value="">{coachesLoading ? "Ładowanie trenerów..." : "Brak trenerów"}</option>
-            ) : (
-              coaches.map((coach) => (
-                <option key={coach.id} value={coach.id}>
-                  {coach.first_name} {coach.last_name} ({coach.email})
-                </option>
-              ))
-            )}
-          </select>
+          <div className="md:col-span-2 flex flex-col gap-2 border border-border p-4 rounded-xl bg-muted/5 mt-1">
+            <span className="text-sm font-semibold text-black">Sztab szkoleniowy (Trenerzy)</span>
+            <span className="text-xs text-muted-foreground -mt-1 mb-2">
+              Dodaj jednego lub więcej trenerów. Drużyna musi posiadać dokładnie jednego Głównego trenera.
+            </span>
+            <div className="space-y-2">
+              {form.coaches.map((assignedCoach, index) => (
+                <div key={index} className="flex flex-col sm:flex-row gap-2 items-center">
+                  <select
+                    className="h-9 flex-grow w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+                    value={assignedCoach.user_id}
+                    onChange={(e) => {
+                      const updated = [...form.coaches];
+                      updated[index].user_id = e.target.value;
+                      setForm((prev) => ({ ...prev, coaches: updated }));
+                    }}
+                    required
+                    disabled={coachesLoading || coaches.length === 0}
+                  >
+                    <option value="" disabled>Wybierz trenera</option>
+                    {coaches.map((coach) => (
+                      <option key={coach.id} value={coach.id}>
+                        {coach.first_name} {coach.last_name} ({coach.email})
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    className="h-9 w-full sm:w-64 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    value={assignedCoach.role}
+                    onChange={(e) => {
+                      const updated = [...form.coaches];
+                      updated[index].role = e.target.value;
+                      setForm((prev) => ({ ...prev, coaches: updated }));
+                    }}
+                    required
+                  >
+                    <option value="Główny trener">Główny trener</option>
+                    <option value="Asystent">Asystent</option>
+                    <option value="Trener bramkarzy">Trener bramkarzy</option>
+                    <option value="Trener przygotowania motorycznego">Trener przygotowania motorycznego</option>
+                  </select>
+                  
+                  {form.coaches.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        const updated = form.coaches.filter((_, i) => i !== index);
+                        setForm((prev) => ({ ...prev, coaches: updated }));
+                      }}
+                      className="h-9 shrink-0"
+                    >
+                      Usuń
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setForm((prev) => ({
+                  ...prev,
+                  coaches: [...prev.coaches, { user_id: coaches[0]?.id || "", role: "Asystent" }],
+                }));
+              }}
+              className="self-start mt-1 border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100/70 hover:text-blue-800 transition-colors"
+            >
+              + Dodaj trenera
+            </Button>
+          </div>
           <textarea
             className="md:col-span-2 min-h-24 rounded-lg border border-input px-2.5 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             placeholder="Opis (opcjonalnie)"
@@ -393,7 +492,7 @@ export default function AdminTeamsPage() {
             <TableRow>
               <TableHead className="w-16">Herb</TableHead>
               <TableHead>Nazwa</TableHead>
-              <TableHead>Trener</TableHead>
+              <TableHead>Sztab szkoleniowy</TableHead>
               <TableHead>Opis</TableHead>
               <TableHead>Utworzono</TableHead>
               <TableHead className="text-right">Akcje</TableHead>
@@ -421,7 +520,7 @@ export default function AdminTeamsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">{team.name}</TableCell>
-                  <TableCell>{fullCoachName(team.coach)}</TableCell>
+                  <TableCell className="max-w-xs truncate" title={formatCoachesList(team.coaches)}>{formatCoachesList(team.coaches)}</TableCell>
                   <TableCell>{team.description || "-"}</TableCell>
                   <TableCell>{new Date(team.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right space-x-2">

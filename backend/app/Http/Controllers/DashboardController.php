@@ -23,7 +23,9 @@ class DashboardController extends Controller
         }
 
         // Get team IDs coached by this coach
-        $teamIds = Team::where('coach_id', $coach->id)->pluck('id');
+        $teamIds = Team::whereHas('coaches', function ($q) use ($coach) {
+            $q->where('users.id', $coach->id);
+        })->pluck('id');
 
         // Fetch approved members in these teams
         $memberships = TeamMember::whereIn('team_id', $teamIds)

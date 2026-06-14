@@ -256,9 +256,9 @@ class TacticController extends Controller
 
     private function coachOwnsTeam(string $coachId, string $teamId): bool
     {
-        return DB::table('teams')
-            ->where('id', $teamId)
-            ->where('coach_id', $coachId)
+        return DB::table('team_coaches')
+            ->where('team_id', $teamId)
+            ->where('user_id', $coachId)
             ->exists();
     }
 

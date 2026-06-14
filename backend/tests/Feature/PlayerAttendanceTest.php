@@ -29,8 +29,16 @@ class PlayerAttendanceTest extends TestCase
             'id' => $teamId,
             'name' => 'KS Fikcyjny Klub',
             'description' => 'Testowy klub',
-            'coach_id' => $coach->id,
             'created_at' => now(),
+        ]);
+
+        DB::table('team_coaches')->insert([
+            'id' => (string) Str::uuid(),
+            'team_id' => $teamId,
+            'user_id' => $coach->id,
+            'role' => 'Główny trener',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $approvedPlayer = User::create([
