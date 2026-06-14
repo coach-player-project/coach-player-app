@@ -21,6 +21,9 @@ interface TacticItem {
   created_at: string
   team_name: string
   team_id: string
+  creator_first_name?: string
+  creator_last_name?: string
+  creator_role?: string
 }
 
 export default function PlayerTacticsPage() {
@@ -111,12 +114,17 @@ export default function PlayerTacticsPage() {
               <ArrowLeft className="h-4 w-4" />
               <span>Wróć do listy taktyk</span>
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-gray-500">Przeglądasz:</span>
               <h2 className="text-lg font-bold text-gray-900">{selectedTactic.title}</h2>
               <Badge className="bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold px-2.5 py-0.5 rounded-full">
                 {selectedTactic.formation || "Brak formacji"}
               </Badge>
+              {selectedTactic.creator_first_name && (
+                <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md font-semibold">
+                  Autor: {selectedTactic.creator_first_name} {selectedTactic.creator_last_name} ({selectedTactic.creator_role || "Trener"})
+                </span>
+              )}
             </div>
           </div>
 
@@ -175,6 +183,15 @@ export default function PlayerTacticsPage() {
                   </div>
 
                   <div className="border-t border-gray-50 mt-5 pt-4 flex flex-col gap-2">
+                    {tactic.creator_first_name && (
+                      <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+                        <span className="text-gray-400">Autor:</span>
+                        <span className="text-gray-700">
+                          {tactic.creator_first_name} {tactic.creator_last_name} ({tactic.creator_role || "Trener"})
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
                       <PenTool className="h-3.5 w-3.5 text-gray-400" />
                       <span>Formacja:</span>

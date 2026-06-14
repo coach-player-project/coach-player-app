@@ -42,6 +42,7 @@ interface MessageData {
     last_name: string
     role: string
     avatar_url: string | null
+    team_role?: string
   }
 }
 
@@ -449,9 +450,15 @@ export default function CoachChatPage() {
                               {!isMine && activeChat.type === "group" && (
                                 <span className="text-[11px] font-medium text-gray-500 mb-1 ml-1 flex items-center gap-1">
                                   {senderName}
-                                  {msg.sender?.role === "coach" && (
-                                    <span className="bg-emerald-50 text-emerald-700 text-[9px] px-1 rounded border border-emerald-200 font-semibold uppercase">
-                                      Trener
+                                  {msg.sender?.team_role && (
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold uppercase ${
+                                      msg.sender.role === "coach" 
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : msg.sender.role === "admin"
+                                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                                          : "bg-blue-50 text-blue-700 border-blue-200"
+                                    }`}>
+                                      {msg.sender.team_role}
                                     </span>
                                   )}
                                 </span>

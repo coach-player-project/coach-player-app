@@ -38,6 +38,7 @@ type EventItem = {
   coach_last_name?: string
   coach_email?: string
   coach_role?: string
+  creator_role?: string
   attendance_status?: "obecny" | "nieobecny" | null
   attendance_note?: string | null
   attendance_responded_at?: string | null
@@ -792,7 +793,7 @@ export default function PlayerEventsPage() {
                         {eventDetails.coach_first_name} {eventDetails.coach_last_name}
                       </div>
                       <div className="text-xs text-gray-400 font-semibold uppercase bg-gray-100/80 px-2 py-0.5 rounded-md inline-block">
-                        {eventDetails.coach_role === "coach" ? "Trener" : eventDetails.coach_role === "admin" ? "Administrator" : eventDetails.coach_role}
+                        {eventDetails.creator_role || (eventDetails.coach_role === "coach" ? "Trener" : eventDetails.coach_role === "admin" ? "Administrator" : eventDetails.coach_role)}
                       </div>
                       {eventDetails.coach_email && (
                         <a

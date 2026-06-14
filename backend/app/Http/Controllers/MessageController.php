@@ -62,23 +62,33 @@ class MessageController extends Controller
                 ->get(['id', 'first_name', 'last_name', 'email', 'avatar_url', 'role']);
 
             foreach ($coaches as $coach) {
-                // Find teams the coach coaches that this player is in
-                $coachTeamIds = \Illuminate\Support\Facades\DB::table('team_coaches')
-                    ->where('user_id', $coach->id)
-                    ->whereIn('team_id', $teamIds)
-                    ->pluck('team_id');
-                $coachTeams = $teams->whereIn('id', $coachTeamIds)->pluck('name')->implode(', ');
+                // Find teams the coach coaches that this player is in, along with their roles
+                $coachTeamRoles = \Illuminate\Support\Facades\DB::table('team_coaches')
+                    ->join('teams', 'teams.id', '=', 'team_coaches.team_id')
+                    ->where('team_coaches.user_id', $coach->id)
+                    ->whereIn('team_coaches.team_id', $teamIds)
+                    ->select('teams.name as team_name', 'team_coaches.role as team_role')
+                    ->get();
+                
+                $roleDescParts = [];
+                foreach ($coachTeamRoles as $tr) {
+                    $roleName = $tr->team_role ?? 'Trener';
+                    $roleDescParts[] = "{$roleName} ({$tr->team_name})";
+                }
+                $description = implode(', ', $roleDescParts) ?: 'Trener';
+
                 $directs[] = [
                     'id' => $coach->id,
                     'first_name' => $coach->first_name,
                     'last_name' => $coach->last_name,
                     'email' => $coach->email,
                     'role' => 'coach',
-                    'description' => "Trener ({$coachTeams})",
+                    'description' => $description,
                     'avatar_url' => $coach->avatar_url,
                     'unread_count' => $unreadCounts[$coach->id] ?? 0,
                 ];
             }
+        } elseif ($user->role === 'coach') {
             // Coach coaches teams
             $teams = Team::query()->whereHas('coaches', function ($q) use ($user) {
                 $q->where('users.id', $user->id);
@@ -93,6 +103,42 @@ class MessageController extends Controller
                     'type' => 'group',
                     'logo_url' => $team->logo_url,
                 ];
+            }
+
+            // Other coaches of those teams
+            $otherCoachRoles = \Illuminate\Support\Facades\DB::table('team_coaches')
+                ->join('teams', 'teams.id', '=', 'team_coaches.team_id')
+                ->whereIn('team_coaches.team_id', $teamIds)
+                ->where('team_coaches.user_id', '!=', $user->id)
+                ->select('team_coaches.user_id', 'teams.name as team_name', 'team_coaches.role as team_role')
+                ->get();
+            
+            $coachInfos = [];
+            foreach ($otherCoachRoles as $ocr) {
+                if (!isset($coachInfos[$ocr->user_id])) {
+                    $coachInfos[$ocr->user_id] = [];
+                }
+                $roleName = $ocr->team_role ?? 'Trener';
+                $coachInfos[$ocr->user_id][] = "{$roleName} ({$ocr->team_name})";
+            }
+
+            if (!empty($coachInfos)) {
+                $coaches = User::query()
+                    ->whereIn('id', array_keys($coachInfos))
+                    ->get(['id', 'first_name', 'last_name', 'email', 'avatar_url', 'role']);
+                
+                foreach ($coaches as $coach) {
+                    $directs[] = [
+                        'id' => $coach->id,
+                        'first_name' => $coach->first_name,
+                        'last_name' => $coach->last_name,
+                        'email' => $coach->email,
+                        'role' => 'coach',
+                        'description' => implode(', ', $coachInfos[$coach->id]),
+                        'avatar_url' => $coach->avatar_url,
+                        'unread_count' => $unreadCounts[$coach->id] ?? 0,
+                    ];
+                }
             }
 
             // Players of those teams
@@ -210,6 +256,8 @@ class MessageController extends Controller
                 ->where('is_read', false)
                 ->update(['is_read' => true]);
 
+            $messages = $this->attachSenderRoles($messages, $user);
+
             return response()->json($messages);
 
         } elseif ($request->has('team_id')) {
@@ -238,13 +286,7 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Brak uprawnień do czatu grupowego tej drużyny.'], 403);
             }
 
-            // Fetch last 100 messages
-            $messages = Message::query()
-                ->where('team_id', $teamId)
-                ->with('sender:id,first_name,last_name,role,avatar_url')
-                ->orderBy('sent_at', 'asc')
-                ->take(150)
-                ->get();
+            $messages = $this->attachSenderRoles($messages, $user);
 
             return response()->json($messages);
         }
@@ -353,6 +395,7 @@ class MessageController extends Controller
         }
 
         $message->load('sender:id,first_name,last_name,role,avatar_url');
+        $message = $this->attachSenderRoles($message, $user);
 
         return response()->json($message, 201);
     }
@@ -380,5 +423,46 @@ class MessageController extends Controller
             ->update(['is_read' => true]);
 
         return response()->json(['success' => true]);
+    }
+
+    private function attachSenderRoles($messages, $currentUser)
+    {
+        $isArray = is_iterable($messages) || $messages instanceof \Illuminate\Support\Collection;
+        $items = $isArray ? $messages : [$messages];
+
+        foreach ($items as $msg) {
+            $sender = $msg->sender;
+            if ($sender) {
+                if ($sender->role === 'coach') {
+                    $role = null;
+                    if ($msg->team_id) {
+                        $role = DB::table('team_coaches')
+                            ->where('team_id', $msg->team_id)
+                            ->where('user_id', $sender->id)
+                            ->value('role');
+                    } else {
+                        // Direct message: find coach's role in a team shared with the current user or receiver
+                        $receiverId = $msg->receiver_id === $sender->id ? $msg->sender_id : ($msg->receiver_id ?? $currentUser->id);
+                        $role = DB::table('team_coaches')
+                            ->join('team_members', 'team_members.team_id', '=', 'team_coaches.team_id')
+                            ->where('team_coaches.user_id', $sender->id)
+                            ->where('team_members.user_id', $receiverId)
+                            ->where('team_members.status', 'approved')
+                            ->value('team_coaches.role');
+                        
+                        if (!$role) {
+                            $role = DB::table('team_coaches')
+                                ->where('user_id', $sender->id)
+                                ->value('role');
+                        }
+                    }
+                    $sender->team_role = $role ?? 'Trener';
+                } else {
+                    $sender->team_role = $sender->role === 'admin' ? 'Administrator' : 'Zawodnik';
+                }
+            }
+        }
+
+        return $messages;
     }
 }

@@ -566,7 +566,11 @@ class EventController extends Controller
     private function baseEventQuery(?string $playerId = null)
     {
         $query = TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by');
+            ->join('users', 'users.id', '=', 'training_sessions.created_by')
+            ->leftJoin('team_coaches', function ($join) {
+                $join->on('team_coaches.team_id', '=', 'training_sessions.team_id')
+                     ->on('team_coaches.user_id', '=', 'training_sessions.created_by');
+            });
 
         $selects = [
             'training_sessions.*',
@@ -575,6 +579,7 @@ class EventController extends Controller
             'users.last_name as coach_last_name',
             'users.email as coach_email',
             'users.role as coach_role',
+            'team_coaches.role as creator_role',
         ];
 
         if ($playerId !== null) {

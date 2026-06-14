@@ -121,7 +121,11 @@ class DashboardController extends Controller
     private function basePlayerEventQuery(string $playerId)
     {
         $query = TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by');
+            ->join('users', 'users.id', '=', 'training_sessions.created_by')
+            ->leftJoin('team_coaches', function ($join) {
+                $join->on('team_coaches.team_id', '=', 'training_sessions.team_id')
+                     ->on('team_coaches.user_id', '=', 'training_sessions.created_by');
+            });
 
         $selects = [
             'training_sessions.*',
@@ -129,6 +133,7 @@ class DashboardController extends Controller
             'users.first_name as coach_first_name',
             'users.last_name as coach_last_name',
             'users.email as coach_email',
+            'team_coaches.role as creator_role',
         ];
 
         // Join attendance for player

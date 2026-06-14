@@ -52,6 +52,8 @@ type EventItem = {
   coach_first_name?: string;
   coach_last_name?: string;
   coach_email?: string;
+  coach_role?: string;
+  creator_role?: string;
 };
 
 type TeamOption = {
@@ -631,7 +633,12 @@ export default function AdminEventsPage() {
                           <span className="text-xs font-semibold text-gray-800 block leading-none">
                             {selectedEventDetails.coach_first_name} {selectedEventDetails.coach_last_name}
                           </span>
-                          <span className="text-[10px] text-gray-500 block mt-0.5">
+                          {(selectedEventDetails.creator_role || selectedEventDetails.coach_role) && (
+                            <span className="text-[10px] text-blue-600 font-semibold block mt-1">
+                              {selectedEventDetails.creator_role || (selectedEventDetails.coach_role === "coach" ? "Trener" : selectedEventDetails.coach_role === "admin" ? "Administrator" : selectedEventDetails.coach_role)}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-gray-500 block mt-1 leading-none select-all">
                             {selectedEventDetails.coach_email}
                           </span>
                         </div>
