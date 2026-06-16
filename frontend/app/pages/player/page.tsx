@@ -58,9 +58,17 @@ export default function PlayerPage() {
   if (loading) {
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Pulpit Zawodnika</h1>
-          <p className="text-gray-500 text-lg">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <UserCheck className="h-10 w-10 text-blue-400 shrink-0" />
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight mb-1">Pulpit Zawodnika</h1>
+                <p className="text-blue-200 text-sm md:text-base">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 flex flex-col justify-center items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -73,9 +81,17 @@ export default function PlayerPage() {
   if (error || !summary) {
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Pulpit Zawodnika</h1>
-          <p className="text-gray-500 text-lg">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <UserCheck className="h-10 w-10 text-blue-400 shrink-0" />
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight mb-1">Pulpit Zawodnika</h1>
+                <p className="text-blue-200 text-sm md:text-base">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="bg-red-50 text-red-800 rounded-xl border border-red-100 p-6 text-center">
           <p className="font-medium">{error || "Brak danych pulpitu."}</p>
@@ -138,9 +154,17 @@ export default function PlayerPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">Pulpit Zawodnika</h1>
-        <p className="text-gray-500 text-lg">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <UserCheck className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">Pulpit Zawodnika</h1>
+              <p className="text-blue-200 text-sm md:text-base">Witaj w swoim panelu. Sprawdź nadchodzące treningi, taktykę i zgłoś swoją obecność.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

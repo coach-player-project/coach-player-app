@@ -33,7 +33,6 @@ class PlayerAttendanceSeeder extends Seeder
             $coach = DB::table('users')->where('id', $coachId)->first();
         }
 
-        // 2. Create or retrieve Team
         $team = DB::table('teams')->where('name', 'FC Attendance Test')->first();
         if (!$team) {
             $teamId = Str::uuid()->toString();
@@ -41,9 +40,18 @@ class PlayerAttendanceSeeder extends Seeder
                 'id' => $teamId,
                 'name' => 'FC Attendance Test',
                 'description' => 'Drużyna do testowania obecności na wydarzeniach.',
-                'coach_id' => $coach->id,
                 'created_at' => now(),
             ]);
+            
+            DB::table('team_coaches')->insert([
+                'id' => Str::uuid()->toString(),
+                'team_id' => $teamId,
+                'user_id' => $coach->id,
+                'role' => 'Główny trener',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
             $team = DB::table('teams')->where('id', $teamId)->first();
         }
 

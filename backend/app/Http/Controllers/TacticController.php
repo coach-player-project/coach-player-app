@@ -192,6 +192,11 @@ class TacticController extends Controller
 
         $tactics = DB::table('tactics')
             ->join('teams', 'teams.id', '=', 'tactics.team_id')
+            ->leftJoin('users', 'users.id', '=', 'tactics.created_by')
+            ->leftJoin('team_coaches', function ($join) {
+                $join->on('team_coaches.team_id', '=', 'tactics.team_id')
+                     ->on('team_coaches.user_id', '=', 'tactics.created_by');
+            })
             ->whereIn('tactics.team_id', $teamIds)
             ->select(
                 'tactics.id',
@@ -201,7 +206,10 @@ class TacticController extends Controller
                 'tactics.match_date',
                 'tactics.created_at',
                 'teams.name as team_name',
-                'teams.id as team_id'
+                'teams.id as team_id',
+                'users.first_name as creator_first_name',
+                'users.last_name as creator_last_name',
+                'team_coaches.role as creator_role'
             )
             ->orderBy('tactics.created_at', 'desc')
             ->get();
@@ -246,19 +254,28 @@ class TacticController extends Controller
     {
         return DB::table('tactics')
             ->join('teams', 'teams.id', '=', 'tactics.team_id')
+            ->leftJoin('users', 'users.id', '=', 'tactics.created_by')
+            ->leftJoin('team_coaches', function ($join) {
+                $join->on('team_coaches.team_id', '=', 'tactics.team_id')
+                     ->on('team_coaches.user_id', '=', 'tactics.created_by');
+            })
             ->where('tactics.id', $id)
             ->select(
                 'tactics.*',
-                'teams.name as team_name'
+                'teams.name as team_name',
+                'users.first_name as creator_first_name',
+                'users.last_name as creator_last_name',
+                'users.email as creator_email',
+                'team_coaches.role as creator_role'
             )
             ->first();
     }
 
     private function coachOwnsTeam(string $coachId, string $teamId): bool
     {
-        return DB::table('teams')
-            ->where('id', $teamId)
-            ->where('coach_id', $coachId)
+        return DB::table('team_coaches')
+            ->where('team_id', $teamId)
+            ->where('user_id', $coachId)
             ->exists();
     }
 

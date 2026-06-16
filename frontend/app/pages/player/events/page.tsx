@@ -38,6 +38,7 @@ type EventItem = {
   coach_last_name?: string
   coach_email?: string
   coach_role?: string
+  creator_role?: string
   attendance_status?: "obecny" | "nieobecny" | null
   attendance_note?: string | null
   attendance_responded_at?: string | null
@@ -213,18 +214,16 @@ export default function PlayerEventsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header section with rich aesthetics */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-600 p-6 md:p-8 text-white shadow-lg">
-        <div className="absolute right-0 bottom-0 opacity-10 translate-x-12 translate-y-12">
-          <Calendar className="w-64 h-64" />
-        </div>
-        <div className="relative z-10 space-y-2">
-          <Badge className="bg-white/20 hover:bg-white/30 text-white border-none py-1 px-3 rounded-full text-xs font-semibold uppercase tracking-wider backdrop-blur-md">
-            Harmonogram
-          </Badge>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Twoje Wydarzenia</h1>
-          <p className="text-blue-100 max-w-xl text-sm md:text-base font-medium">
-            Sprawdź nadchodzące oraz historyczne treningi i mecze utworzone przez Twojego trenera. Bądź na bieżąco z planem!
-          </p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Calendar className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">Twoje Wydarzenia</h1>
+              <p className="text-blue-200 text-sm md:text-base">Sprawdź nadchodzące oraz historyczne treningi i mecze utworzone przez Twojego trenera. Bądź na bieżąco z planem!</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -792,7 +791,7 @@ export default function PlayerEventsPage() {
                         {eventDetails.coach_first_name} {eventDetails.coach_last_name}
                       </div>
                       <div className="text-xs text-gray-400 font-semibold uppercase bg-gray-100/80 px-2 py-0.5 rounded-md inline-block">
-                        {eventDetails.coach_role === "coach" ? "Trener" : eventDetails.coach_role === "admin" ? "Administrator" : eventDetails.coach_role}
+                        {eventDetails.creator_role || (eventDetails.coach_role === "coach" ? "Trener" : eventDetails.coach_role === "admin" ? "Administrator" : eventDetails.coach_role)}
                       </div>
                       {eventDetails.coach_email && (
                         <a

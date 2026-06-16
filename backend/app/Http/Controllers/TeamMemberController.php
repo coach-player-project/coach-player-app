@@ -76,8 +76,18 @@ class TeamMemberController extends Controller
         $member->load(['team:id,name', 'user:id,first_name,last_name,email,role']);
 
         if ($member->user && $member->user->role === 'coach') {
-            \App\Models\Team::where('id', $member->team_id)
-                ->update(['coach_id' => $member->user_id]);
+            $team = \App\Models\Team::find($member->team_id);
+            if ($team) {
+                $hasHeadCoach = $team->coaches()->wherePivot('role', 'Główny trener')->exists();
+                $role = $hasHeadCoach ? 'Asystent' : 'Główny trener';
+
+                if (!$team->coaches()->where('users.id', $member->user_id)->exists()) {
+                    $team->coaches()->attach($member->user_id, [
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'role' => $role,
+                    ]);
+                }
+            }
         }
 
         return response()->json([

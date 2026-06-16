@@ -114,7 +114,9 @@ class User extends Authenticatable
 
     public function coachedTeams()
     {
-        return $this->hasMany(Team::class, 'coach_id');
+        return $this->belongsToMany(Team::class, 'team_coaches')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 }
 
