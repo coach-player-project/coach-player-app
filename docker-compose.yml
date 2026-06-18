@@ -43,8 +43,16 @@ services:
       QUEUE_CONNECTION: database
       GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-}
       GOOGLE_SERVICE_ACCOUNT_JSON: ${GOOGLE_SERVICE_ACCOUNT_JSON:-}
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: coach_app
+      REVERB_APP_KEY: coach_key
+      REVERB_APP_SECRET: coach_secret
+      REVERB_HOST: 0.0.0.0
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
     ports:
       - "8000:8000"
+      - "8080:8080"
     volumes:
       - ./backend:/var/www/html
       - backend_vendor:/var/www/html/vendor
@@ -55,6 +63,7 @@ services:
       sh -c "
         php artisan config:clear &&
         php artisan migrate --seed --force &&
+        php artisan reverb:start --host=0.0.0.0 --port=8080 &
         php artisan serve --host=0.0.0.0 --port=8000
       "
 
@@ -68,6 +77,10 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
       API_INTERNAL_URL: http://backend:8000
+      NEXT_PUBLIC_REVERB_APP_KEY: coach_key
+      NEXT_PUBLIC_REVERB_HOST: localhost
+      NEXT_PUBLIC_REVERB_PORT: 8080
+      NEXT_PUBLIC_REVERB_SCHEME: http
     ports:
       - "3000:3000"
     depends_on:
