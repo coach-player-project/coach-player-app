@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { apiFetch, getCurrentUser } from "@/lib/api"
+import { getEcho } from "@/lib/echo"
 import { 
   Send, 
   Search, 
@@ -59,7 +60,8 @@ export default function PlayerChatPage() {
   const [error, setError] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const pollingTimer = useRef<NodeJS.Timeout | null>(null)
+  const isSending = useRef(false)
+
 
   // Scroll to bottom helper
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
@@ -133,34 +135,78 @@ export default function PlayerChatPage() {
     }
   }, [activeChat, scrollToBottom])
 
-  // Setup 5-second polling
+  // Listen for real-time messages via WebSockets
   useEffect(() => {
-    // Clear existing timer
-    if (pollingTimer.current) {
-      clearInterval(pollingTimer.current)
-    }
+    const echo = getEcho()
+    if (!echo || !currentUser) return
 
-    pollingTimer.current = setInterval(() => {
-      loadContacts(true)
-      if (activeChat) {
-        loadMessages(activeChat, true)
-      }
-    }, 5000)
+    // 1. Subscribe to the user's private channel for direct messages
+    const userChannel = echo.private(`user.${currentUser.id}`)
+      .listen(".MessageSent", (e: any) => {
+        const incomingMsg = e.message
+        
+        // If the message is a direct message
+        if (incomingMsg.receiver_id === currentUser.id || incomingMsg.sender_id === currentUser.id) {
+          // If we are actively chatting with the sender/receiver of this message
+          if (activeChat && activeChat.type === "direct" && 
+              (incomingMsg.sender_id === activeChat.id || incomingMsg.receiver_id === activeChat.id)) {
+            
+            // Add message to the list if not already there
+            setMessages(prev => {
+              if (prev.some(m => m.id === incomingMsg.id)) return prev
+              return [...prev, incomingMsg]
+            })
+            scrollToBottom("smooth")
+
+            // Mark message as read on backend if it is from the other user to us
+            if (incomingMsg.sender_id === activeChat.id) {
+              apiFetch("/messages/read", {
+                method: "POST",
+                body: JSON.stringify({ sender_id: activeChat.id })
+              }).catch(err => console.error("Error marking message as read:", err))
+            }
+          }
+          
+          // Refresh contacts list to update last messages and unread badges
+          loadContacts(true)
+        }
+      })
+
+    // 2. Subscribe to the team's private channel if active chat is a group chat
+    let teamChannel: any = null
+    if (activeChat && activeChat.type === "group") {
+      teamChannel = echo.private(`team.${activeChat.id}`)
+        .listen(".MessageSent", (e: any) => {
+          const incomingMsg = e.message
+          
+          if (incomingMsg.team_id === activeChat.id) {
+            setMessages(prev => {
+              if (prev.some(m => m.id === incomingMsg.id)) return prev
+              return [...prev, incomingMsg]
+            })
+            scrollToBottom("smooth")
+          }
+          
+          // Refresh contacts to update last message preview
+          loadContacts(true)
+        })
+    }
 
     return () => {
-      if (pollingTimer.current) {
-        clearInterval(pollingTimer.current)
+      userChannel.stopListening(".MessageSent")
+      if (teamChannel) {
+        teamChannel.stopListening(".MessageSent")
       }
     }
-  }, [activeChat, loadContacts, loadMessages])
+  }, [currentUser, activeChat, loadContacts, scrollToBottom])
 
-  // Send message
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (!newMessage.trim() || !activeChat || sendingMessage) return
+    if (!newMessage.trim() || !activeChat || isSending.current) return
 
     const messageText = newMessage.trim()
     setNewMessage("") // Clear immediately for snappy UI
+    isSending.current = true
     setSendingMessage(true)
 
     try {
@@ -176,7 +222,10 @@ export default function PlayerChatPage() {
         body: JSON.stringify(payload)
       }) as MessageData
 
-      setMessages(prev => [...prev, sentMsg])
+      setMessages(prev => {
+        if (prev.some(m => m.id === sentMsg.id)) return prev
+        return [...prev, sentMsg]
+      })
       scrollToBottom("smooth")
       
       // Update contacts list to put this contact/channel at the top
@@ -186,6 +235,7 @@ export default function PlayerChatPage() {
       setError("Nie udało się wysłać wiadomości.")
       setNewMessage(messageText) // Restore message text on error
     } finally {
+      isSending.current = false
       setSendingMessage(false)
     }
   }

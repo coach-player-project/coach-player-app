@@ -86,6 +86,7 @@ class MessageController extends Controller
                     'description' => $description,
                     'avatar_url' => $coach->avatar_url,
                     'unread_count' => $unreadCounts[$coach->id] ?? 0,
+                    'type' => 'direct',
                 ];
             }
         } elseif ($user->role === 'coach') {
@@ -137,6 +138,7 @@ class MessageController extends Controller
                         'description' => implode(', ', $coachInfos[$coach->id]),
                         'avatar_url' => $coach->avatar_url,
                         'unread_count' => $unreadCounts[$coach->id] ?? 0,
+                        'type' => 'direct',
                     ];
                 }
             }
@@ -175,6 +177,7 @@ class MessageController extends Controller
                     'description' => "Zawodnik ({$teamsList})",
                     'avatar_url' => $player->avatar_url,
                     'unread_count' => $unreadCounts[$player->id] ?? 0,
+                    'type' => 'direct',
                 ];
             }
         }
@@ -286,6 +289,13 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Brak uprawnień do czatu grupowego tej drużyny.'], 403);
             }
 
+            $messages = Message::query()
+                ->where('team_id', $teamId)
+                ->with('sender:id,first_name,last_name,role,avatar_url')
+                ->orderBy('sent_at', 'asc')
+                ->take(150)
+                ->get();
+
             $messages = $this->attachSenderRoles($messages, $user);
 
             return response()->json($messages);
@@ -396,6 +406,8 @@ class MessageController extends Controller
 
         $message->load('sender:id,first_name,last_name,role,avatar_url');
         $message = $this->attachSenderRoles($message, $user);
+
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
 
         return response()->json($message, 201);
     }
