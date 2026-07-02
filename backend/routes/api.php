@@ -25,16 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         if ($user->role === 'player') {
-            $user->load(['teamMemberships' => function ($q) {
-                $q->where('status', 'approved')->with('team');
-            }]);
+            $user->load('teamMemberships.team');
         } elseif ($user->role === 'coach') {
-            $user->load('coachedTeams');
+            $user->load(['coachedTeams', 'teamMemberships.team']);
         }
         return response()->json($user);
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
+    Route::post('/user/join-team', [UserController::class, 'joinTeam']);
 
     // Trasy czatu / wiadomości
     Route::get('/messages/contacts', [MessageController::class, 'getContacts']);
@@ -107,6 +106,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tactics/{id}', [TacticController::class, 'coachShow']);
         Route::put('/tactics/{id}', [TacticController::class, 'coachUpdate']);
         Route::delete('/tactics/{id}', [TacticController::class, 'coachDestroy']);
+
+        // Integracja API-Football
+        Route::get('/api-football/countries', [\App\Http\Controllers\ApiFootballController::class, 'getCountries']);
+        Route::get('/api-football/leagues', [\App\Http\Controllers\ApiFootballController::class, 'getLeagues']);
+        Route::get('/api-football/teams', [\App\Http\Controllers\ApiFootballController::class, 'getTeams']);
+        Route::post('/teams/{team_id}/link-api-football', [\App\Http\Controllers\ApiFootballController::class, 'linkTeam']);
+        Route::post('/teams/{team_id}/unlink-api-football', [\App\Http\Controllers\ApiFootballController::class, 'unlinkTeam']);
+        Route::post('/teams/{team_id}/sync-api-football', [\App\Http\Controllers\ApiFootballController::class, 'syncTeam']);
     });
 
     // -----------------------------------------------------

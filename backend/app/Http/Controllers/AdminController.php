@@ -84,7 +84,7 @@ class AdminController extends Controller
         $role = $request->input('role');
         $search = $request->input('search');
 
-        $query = User::query();
+        $query = User::query()->with(['teamMemberships.team', 'coachedTeams']);
 
         if (!empty($role)) {
             $query->where('role', $role);
@@ -160,6 +160,7 @@ class AdminController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'in:admin,coach,player'],
             'password' => ['required', 'string', 'min:8'],
+            'team_id' => ['nullable', 'uuid', 'exists:teams,id'],
         ]);
 
         $user = User::create([
@@ -170,6 +171,10 @@ class AdminController extends Controller
             'role' => $validated['role'],
             'password_hash' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ]);
+
+        if (!empty($validated['team_id']) && $validated['role'] !== 'admin') {
+            $this->assignUserToTeam($user, $validated['team_id']);
+        }
 
         return response()->json([
             'message' => 'Użytkownik został pomyślnie utworzony.',
@@ -194,7 +199,7 @@ class AdminController extends Controller
     )]
     public function show(string $id)
     {
-        $user = User::find($id);
+        $user = User::with(['teamMemberships.team', 'coachedTeams'])->find($id);
 
         if (!$user) {
             return response()->json([
@@ -255,6 +260,7 @@ class AdminController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'in:admin,coach,player'],
             'password' => ['nullable', 'string', 'min:8'],
+            'team_id' => ['nullable', 'uuid', 'exists:teams,id'],
         ]);
 
         // Prevent admin from changing their own role to non-admin
@@ -276,6 +282,17 @@ class AdminController extends Controller
         }
 
         $user->save();
+
+        // Handle team assignment
+        if ($user->role !== 'admin') {
+            if (!empty($validated['team_id'])) {
+                $this->assignUserToTeam($user, $validated['team_id']);
+            } else {
+                $this->removeUserFromTeams($user);
+            }
+        } else {
+            $this->removeUserFromTeams($user);
+        }
 
         return response()->json([
             'message' => 'Dane użytkownika zostały pomyślnie zaktualizowane.',
@@ -322,6 +339,49 @@ class AdminController extends Controller
         return response()->json([
             'message' => 'Użytkownik został pomyślnie usunięty.'
         ], 200);
+    }
+
+    /**
+     * Assign a user directly to a team (status = approved).
+     */
+    private function assignUserToTeam(User $user, string $teamId): void
+    {
+        $this->removeUserFromTeams($user);
+
+        \Illuminate\Support\Facades\DB::table('team_members')->insert([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'team_id' => $teamId,
+            'user_id' => $user->id,
+            'status' => 'approved',
+            'joined_at' => now(),
+        ]);
+
+        if ($user->role === 'coach') {
+            $team = \App\Models\Team::find($teamId);
+            if ($team) {
+                $hasHeadCoach = $team->coaches()->wherePivot('role', 'Główny trener')->exists();
+                $role = $hasHeadCoach ? 'Asystent' : 'Główny trener';
+
+                $team->coaches()->attach($user->id, [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'role' => $role,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Remove a user from all teams.
+     */
+    private function removeUserFromTeams(User $user): void
+    {
+        \Illuminate\Support\Facades\DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        if ($user->role === 'coach') {
+            $user->coachedTeams()->detach();
+        }
     }
 }
 

@@ -37,6 +37,7 @@ import {
   ChevronUp,
   ChevronDown,
   UserCheck,
+  Users,
 } from "lucide-react";
 
 type UserItem = {
@@ -48,6 +49,8 @@ type UserItem = {
   phone: string | null;
   avatar_url: string | null;
   created_at: string;
+  team_memberships?: { team_id: string; status: string; team?: { name: string } }[];
+  coached_teams?: { id: string; name: string }[];
 };
 
 type UserFormState = {
@@ -57,6 +60,7 @@ type UserFormState = {
   phone: string;
   role: "admin" | "coach" | "player";
   password: string;
+  team_id: string;
 };
 
 const initialForm: UserFormState = {
@@ -66,6 +70,7 @@ const initialForm: UserFormState = {
   phone: "",
   role: "player",
   password: "",
+  team_id: "",
 };
 
 export default function AdminPage() {
@@ -75,6 +80,7 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
 
   // SFP States
   const [search, setSearch] = useState("");
@@ -103,6 +109,10 @@ export default function AdminPage() {
       // Fetch logged-in user to prevent deleting self
       const selfData = await apiFetch("/user");
       setCurrentUser(selfData);
+
+      // Fetch all teams for user team assignment dropdown
+      const teamsData = await apiFetch("/teams?per_page=100");
+      setTeams(teamsData.data ?? []);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Nie udało się pobrać danych użytkowników."
@@ -207,6 +217,10 @@ export default function AdminPage() {
   };
 
   const openEditForm = (user: UserItem) => {
+    const userTeamId = user.role === "coach"
+      ? (user.coached_teams?.[0]?.id ?? "")
+      : (user.team_memberships?.[0]?.team_id ?? "");
+
     setEditingUser(user);
     setForm({
       first_name: user.first_name ?? "",
@@ -215,6 +229,7 @@ export default function AdminPage() {
       phone: user.phone ?? "",
       role: user.role ?? "player",
       password: "", // Keep blank, only fill to change password
+      team_id: userTeamId,
     });
     setError(null);
     setMessage(null);
@@ -237,6 +252,7 @@ export default function AdminPage() {
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim() || null,
         role: form.role,
+        team_id: form.team_id || null,
       };
 
       if (!isEditing) {
@@ -468,6 +484,16 @@ export default function AdminPage() {
                               </Badge>
                             )}
                           </div>
+                          {user.role === "coach" && (
+                            <div className="text-xs text-muted-foreground font-normal">
+                              {user.coached_teams?.[0]?.name ? `Trener: ${user.coached_teams[0].name}` : "Brak przypisanej drużyny"}
+                            </div>
+                          )}
+                          {user.role === "player" && (
+                            <div className="text-xs text-muted-foreground font-normal">
+                              {user.team_memberships?.[0]?.team?.name ? `Drużyna: ${user.team_memberships[0].team.name}` : "Brak drużyny"}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="py-3.5 text-gray-600">{user.email}</TableCell>
@@ -636,10 +662,35 @@ export default function AdminPage() {
                 >
                   <option value="player">Zawodnik (player)</option>
                   <option value="coach">Trener (coach)</option>
-                  <option value="admin">Administrator (admin)</option>
                 </select>
               </div>
             </div>
+
+            {/* Drużyna selection */}
+            {(form.role === "player" || form.role === "coach") && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+                  Drużyna / Zespół
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <select
+                    className="h-10 w-full rounded-lg border border-input bg-transparent pl-9 pr-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    value={form.team_id}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, team_id: e.target.value }))
+                    }
+                  >
+                    <option value="">-- Brak drużyny (Brak przypisania) --</option>
+                    {teams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Password */}
             <div className="space-y-1.5">

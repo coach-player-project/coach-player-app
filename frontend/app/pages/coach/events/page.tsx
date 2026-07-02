@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Search, Trophy, Dumbbell, CalendarDays, Presentation, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Search, Trophy, Dumbbell, CalendarDays, Presentation, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { TacticalBoard } from "@/components/tactical-board";
 import {
   Table,
@@ -28,6 +28,7 @@ type EventItem = {
   duration_minutes: number;
   team_name?: string;
   canvas_data?: string | null;
+  api_football_fixture_id?: number | null;
 };
 
 type TeamOption = {
@@ -112,6 +113,8 @@ export default function CoachEventsPage() {
   const [form, setForm] = useState<EventFormState>(initialForm);
 
   const isEditing = Boolean(editingId);
+  const editingEvent = editingId ? items.find(item => item.id === editingId) : null;
+  const isApiFootballEvent = Boolean(editingEvent?.api_football_fixture_id);
 
   // Calendar View states
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -371,11 +374,10 @@ export default function CoachEventsPage() {
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Drużyna</label>
             <select
-              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1 text-sm font-medium text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1 text-sm font-medium text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={form.team_id}
               onChange={(e) => setForm((prev) => ({ ...prev, team_id: e.target.value }))}
-              required
-              disabled={teamsLoading || teams.length === 0}
+              disabled={teamsLoading || teams.length === 0 || isApiFootballEvent}
             >
               <option value="" disabled>
                 {teamsLoading ? "Ładowanie drużyn..." : "Wybierz drużynę"}
@@ -391,7 +393,7 @@ export default function CoachEventsPage() {
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Typ wydarzenia</label>
             <select
-              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1 text-sm font-medium text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1 text-sm font-medium text-gray-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
               value={form.event_type}
               onChange={(e) => {
                 const eventType = e.target.value as EventType;
@@ -402,10 +404,16 @@ export default function CoachEventsPage() {
                 }));
               }}
               required
+              disabled={isApiFootballEvent}
             >
               <option value="training">Trening</option>
               <option value="match">Mecz</option>
             </select>
+            {isApiFootballEvent && (
+              <span className="text-[10px] text-green-600 font-semibold block mt-0.5">
+                Wydarzenie zsynchronizowane z oficjalnymi rozgrywkami (typ zablokowany).
+              </span>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -661,6 +669,12 @@ export default function CoachEventsPage() {
                                 Taktyka
                               </span>
                             )}
+                            {item.api_football_fixture_id && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-green-50 border border-green-150 text-green-700 px-2 py-0.5 rounded-full" title="Mecz zaimportowany z oficjalnych rozgrywek ligowych">
+                                <Globe className="w-3.5 h-3.5" />
+                                Oficjalny
+                              </span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="py-4 text-gray-650 font-medium">{item.team_name ?? item.team_id}</TableCell>
@@ -858,7 +872,10 @@ export default function CoachEventsPage() {
                                 ) : (
                                   <Dumbbell className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                                 )}
-                                <span className="truncate">{event.title}</span>
+                                <span className="truncate flex-1">{event.title}</span>
+                                {event.api_football_fixture_id && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" title="Zsynchronizowano z API-Football" />
+                                )}
                               </div>
                             );
                           })}

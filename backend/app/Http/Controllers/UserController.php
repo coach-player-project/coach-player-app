@@ -64,4 +64,52 @@ class UserController extends Controller
             'user' => $user
         ]);
     }
+
+    /**
+     * Request to join a team (resend/override pending or rejected requests).
+     */
+    public function joinTeam(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role === 'admin') {
+            return response()->json(['message' => 'Administratorzy nie dołączają do drużyn.'], 400);
+        }
+
+        $validated = $request->validate([
+            'team_id' => ['required', 'uuid', 'exists:teams,id'],
+        ]);
+
+        // Check if there is already an approved membership
+        $approved = \Illuminate\Support\Facades\DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->exists();
+
+        if ($approved) {
+            return response()->json(['message' => 'Należysz już do zatwierdzonej drużyny.'], 400);
+        }
+
+        // Delete any pending/rejected requests for this user
+        \Illuminate\Support\Facades\DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        // If coach, detach coached teams to start fresh
+        if ($user->role === 'coach') {
+            $user->coachedTeams()->detach();
+        }
+
+        // Create new membership request
+        \Illuminate\Support\Facades\DB::table('team_members')->insert([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'team_id' => $validated['team_id'],
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'joined_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Prośba o dołączenie do drużyny została wysłana.'
+        ], 200);
+    }
 }

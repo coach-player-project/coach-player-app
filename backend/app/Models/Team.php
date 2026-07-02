@@ -17,11 +17,16 @@ class Team extends Model
         'name',
         'description',
         'logo_path',
+        'api_football_team_id',
+        'api_football_league_id',
+        'api_football_season',
+        'api_football_team_name',
     ];
 
     protected $appends = [
         'logo_url',
         'coach',
+        'coach_id',
     ];
 
     /**
@@ -38,6 +43,14 @@ class Team extends Model
     public function getCoachAttribute()
     {
         return $this->coaches()->wherePivot('role', 'Główny trener')->first();
+    }
+
+    /**
+     * Get the head coach ID (backward compatibility).
+     */
+    public function getCoachIdAttribute(): ?string
+    {
+        return $this->coach?->id;
     }
 
     /**
