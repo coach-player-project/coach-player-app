@@ -41,6 +41,11 @@ export function SettingsPage() {
   const [importFixtures, setImportFixtures] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
+  const [allTeamsOptions, setAllTeamsOptions] = useState<any[]>([])
+  const [currentMembership, setCurrentMembership] = useState<any>(null)
+  const [joinTeamId, setJoinTeamId] = useState('')
+  const [joinLoading, setJoinLoading] = useState(false)
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -58,10 +63,13 @@ export function SettingsPage() {
           password: ''
         })
         if (user.role === 'player' && user.team_memberships) {
-          setTeams(user.team_memberships.map((m: any) => m.team).filter(Boolean))
+          const approved = user.team_memberships.filter((m: any) => m.status === 'approved').map((m: any) => m.team).filter(Boolean)
+          setTeams(approved)
+          setCurrentMembership(user.team_memberships?.[0] || null)
         } else if (user.role === 'coach' && user.coached_teams) {
           const coachedTeams = user.coached_teams || []
           setTeams(coachedTeams)
+          setCurrentMembership(user.team_memberships?.[0] || null)
           if (coachedTeams.length > 0) {
             if (!selectedTeamId) {
               setSelectedTeamId(coachedTeams[0].id)
@@ -72,6 +80,9 @@ export function SettingsPage() {
             }
           }
         }
+
+        const allTeams = await apiFetch('/teams?per_page=100') as any
+        setAllTeamsOptions(allTeams.data || [])
       }
     } catch (err) {
       setMessage({ type: 'error', text: 'Nie udało się pobrać danych użytkownika.' })
@@ -270,6 +281,26 @@ export function SettingsPage() {
     }
   }
 
+  const handleJoinTeam = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!joinTeamId) return
+
+    setJoinLoading(true)
+    setMessage(null)
+    try {
+      await apiFetch('/user/join-team', {
+        method: 'POST',
+        body: JSON.stringify({ team_id: joinTeamId })
+      })
+      setMessage({ type: 'success', text: 'Prośba o dołączenie została pomyślnie wysłana!' })
+      await loadData()
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Nie udało się wysłać prośby o dołączenie.' })
+    } finally {
+      setJoinLoading(false)
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -465,30 +496,19 @@ export function SettingsPage() {
               </div>
             </div>
 
-            {userRole === 'player' && (
+            {(userRole === 'player' || userRole === 'coach') && (
               <div className="space-y-4 border-b border-border pb-6">
-                <h3 className="text-lg font-semibold text-foreground">Moje kluby / drużyny</h3>
-                <div className="space-y-2">
-                  {teams.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {teams.map((team: any) => (
-                        <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                          {team.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Nie należysz obecnie do żadnego zatwierdzonego klubu.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {userRole === 'coach' && (
-              <div className="space-y-4 border-b border-border pb-6">
-                <h3 className="text-lg font-semibold text-foreground">Prowadzone drużyny</h3>
-                <div className="space-y-2">
-                  {teams.length > 0 ? (
+                <h3 className="text-lg font-semibold text-foreground">
+                  {userRole === 'coach' ? 'Prowadzone drużyny' : 'Moje kluby / drużyny'}
+                </h3>
+                
+                {teams.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {userRole === 'coach' 
+                        ? 'Jesteś przypisany jako trener do następujących klubów:' 
+                        : 'Należysz do następujących zatwierdzonych zespołów:'}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {teams.map((team: any) => (
                         <span key={team.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25">
@@ -496,10 +516,56 @@ export function SettingsPage() {
                         </span>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Nie masz przypisanych żadnych prowadzonych drużyn.</p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {currentMembership && currentMembership.status === 'pending' ? (
+                      <div className="p-4 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <p className="text-sm font-medium">
+                          Twoje zgłoszenie do drużyny <span className="font-bold">{currentMembership.team?.name}</span> oczekuje na akceptację przez administratora.
+                        </p>
+                      </div>
+                    ) : currentMembership && currentMembership.status === 'rejected' ? (
+                      <div className="p-4 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                        <p className="text-sm font-medium">
+                          Twoje zgłoszenie do drużyny <span className="font-bold">{currentMembership.team?.name}</span> zostało odrzucone przez administratora. Możesz wybrać inną drużynę poniżej i spróbować ponownie.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                        <p className="text-sm font-medium">Nie należysz obecnie do żadnego zespołu.</p>
+                      </div>
+                    )}
+
+                    {/* Formularz dołączania do nowej drużyny */}
+                    <div className="space-y-2 max-w-md pt-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase block">
+                        Wybierz drużynę, do której chcesz wysłać prośbę o dołączenie
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          value={joinTeamId}
+                          onChange={(e) => setJoinTeamId(e.target.value)}
+                          disabled={joinLoading}
+                          className="flex-1 px-3 py-2 border border-border bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+                        >
+                          <option value="">-- Wybierz drużynę --</option>
+                          {allTeamsOptions.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleJoinTeam}
+                          disabled={joinLoading || !joinTeamId}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                        >
+                          {joinLoading ? 'Wysyłanie...' : 'Wyślij prośbę'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

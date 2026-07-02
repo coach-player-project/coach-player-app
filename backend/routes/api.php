@@ -25,16 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         if ($user->role === 'player') {
-            $user->load(['teamMemberships' => function ($q) {
-                $q->where('status', 'approved')->with('team');
-            }]);
+            $user->load('teamMemberships.team');
         } elseif ($user->role === 'coach') {
-            $user->load('coachedTeams');
+            $user->load(['coachedTeams', 'teamMemberships.team']);
         }
         return response()->json($user);
     });
 
     Route::put('/user', [UserController::class, 'updateProfile']);
+    Route::post('/user/join-team', [UserController::class, 'joinTeam']);
 
     // Trasy czatu / wiadomości
     Route::get('/messages/contacts', [MessageController::class, 'getContacts']);
