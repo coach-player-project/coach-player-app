@@ -52,6 +52,8 @@ type EventItem = {
   coach_first_name?: string;
   coach_last_name?: string;
   coach_email?: string;
+  coach_role?: string;
+  creator_role?: string;
 };
 
 type TeamOption = {
@@ -307,21 +309,22 @@ export default function AdminEventsPage() {
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-fade-in">
       
       {/* NAGŁÓWEK STRONY */}
-      <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-950 flex items-center gap-2">
-            <CalendarDays className="h-7 w-7 text-blue-600" />
-            Harmonogram Wydarzeń
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Zarządzaj w pełni treningami, meczami, przypisanymi drużynami oraz zaawansowanymi danymi taktycznymi i kalendarzem.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5 text-sm shadow-none font-medium">
-            <Sparkles className="h-4 w-4 mr-1.5 text-blue-600 inline" />
-            Łącznie: {meta.total} wydarzeń
-          </Badge>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Harmonogram Wydarzeń</h1>
+              <p className="text-blue-200 text-sm md:text-base">Zarządzaj w pełni treningami, meczami, przypisanymi drużynami oraz zaawansowanymi danymi taktycznymi i kalendarzem.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge className="bg-white/10 text-blue-200 border-white/10 hover:bg-white/20 px-3 py-1.5 text-sm shadow-none font-medium">
+              <Sparkles className="h-4 w-4 mr-1.5 text-blue-400 inline" />
+              Łącznie: {meta.total} wydarzeń
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -631,7 +634,12 @@ export default function AdminEventsPage() {
                           <span className="text-xs font-semibold text-gray-800 block leading-none">
                             {selectedEventDetails.coach_first_name} {selectedEventDetails.coach_last_name}
                           </span>
-                          <span className="text-[10px] text-gray-500 block mt-0.5">
+                          {(selectedEventDetails.creator_role || selectedEventDetails.coach_role) && (
+                            <span className="text-[10px] text-blue-600 font-semibold block mt-1">
+                              {selectedEventDetails.creator_role || (selectedEventDetails.coach_role === "coach" ? "Trener" : selectedEventDetails.coach_role === "admin" ? "Administrator" : selectedEventDetails.coach_role)}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-gray-500 block mt-1 leading-none select-all">
                             {selectedEventDetails.coach_email}
                           </span>
                         </div>

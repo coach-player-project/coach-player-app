@@ -323,7 +323,12 @@ class EventController extends Controller
         $baseQuery = $this->baseEventQuery();
 
         if ($coachId !== null) {
-            $baseQuery->where('teams.coach_id', $coachId);
+            $baseQuery->whereExists(function ($query) use ($coachId) {
+                $query->select(DB::raw(1))
+                    ->from('team_coaches')
+                    ->whereColumn('team_coaches.team_id', 'training_sessions.team_id')
+                    ->where('team_coaches.user_id', $coachId);
+            });
         }
 
         if (!empty($teamId)) {
@@ -561,7 +566,11 @@ class EventController extends Controller
     private function baseEventQuery(?string $playerId = null)
     {
         $query = TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->join('users', 'users.id', '=', 'training_sessions.created_by');
+            ->join('users', 'users.id', '=', 'training_sessions.created_by')
+            ->leftJoin('team_coaches', function ($join) {
+                $join->on('team_coaches.team_id', '=', 'training_sessions.team_id')
+                     ->on('team_coaches.user_id', '=', 'training_sessions.created_by');
+            });
 
         $selects = [
             'training_sessions.*',
@@ -570,6 +579,7 @@ class EventController extends Controller
             'users.last_name as coach_last_name',
             'users.email as coach_email',
             'users.role as coach_role',
+            'team_coaches.role as creator_role',
         ];
 
         if ($playerId !== null) {
@@ -615,16 +625,18 @@ class EventController extends Controller
     private function coachOwnsTeam(string $coachId, string $teamId): bool
     {
         return Team::where('id', $teamId)
-            ->where('coach_id', $coachId)
-            ->exists();
+            ->whereHas('coaches', function ($q) use ($coachId) {
+                $q->where('users.id', $coachId);
+            })->exists();
     }
 
     private function coachOwnsEvent(string $coachId, string $eventId): bool
     {
-        return TrainingSession::join('teams', 'teams.id', '=', 'training_sessions.team_id')
-            ->where('training_sessions.id', $eventId)
-            ->where('teams.coach_id', $coachId)
-            ->exists();
+        $event = TrainingSession::find($eventId);
+        if (!$event) {
+            return false;
+        }
+        return $this->coachOwnsTeam($coachId, $event->team_id);
     }
 
     private function listPlayerEvents(Request $request, array $teamIds)

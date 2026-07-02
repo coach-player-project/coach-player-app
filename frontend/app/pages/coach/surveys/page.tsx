@@ -117,41 +117,40 @@ export default function CoachSurveysPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Nagłówek */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 rounded-lg bg-indigo-50">
-            <Activity className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ankiety zmęczenia</h1>
-            <p className="text-sm text-gray-500">
-              Monitoruj poziom zmęczenia swoich zawodników po każdym treningu i meczu
-            </p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Activity className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">Ankiety zmęczenia</h1>
+              <p className="text-blue-200 text-sm md:text-base">Monitoruj poziom zmęczenia swoich zawodników po każdym treningu i meczu.</p>
+            </div>
           </div>
         </div>
-
-        {/* Statystyki na górze */}
-        {!loading && items.length > 0 && (
-          <div className="mt-5 grid grid-cols-3 gap-4">
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">{meta.total}</div>
-              <div className="text-xs text-gray-500 mt-1">Łączne odpowiedzi</div>
-            </div>
-            <div className={`rounded-lg border p-4 text-center ${avg !== null && avg >= 7 ? "bg-rose-50 border-rose-200" : avg !== null && avg <= 4 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-              <div className={`text-2xl font-bold ${avg !== null && avg >= 7 ? "text-rose-700" : avg !== null && avg <= 4 ? "text-emerald-700" : "text-amber-700"}`}>
-                {avg !== null ? avg : "—"}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Śr. zmęczenie (ta strona)</div>
-            </div>
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {items.filter(i => i.rating >= 8).length}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Wysokie zmęczenie (≥8)</div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Statystyki na górze */}
+      {!loading && items.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+            <div className="text-2xl font-bold text-gray-900">{meta.total}</div>
+            <div className="text-xs text-gray-500 mt-1">Łączne odpowiedzi</div>
+          </div>
+          <div className={`rounded-2xl border p-4 text-center ${avg !== null && avg >= 7 ? "bg-rose-50/50 border-rose-200" : avg !== null && avg <= 4 ? "bg-emerald-50/50 border-emerald-200" : "bg-amber-50/50 border-amber-200"}`}>
+            <div className={`text-2xl font-bold ${avg !== null && avg >= 7 ? "text-rose-700" : avg !== null && avg <= 4 ? "text-emerald-700" : "text-amber-700"}`}>
+              {avg !== null ? avg : "—"}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Śr. zmęczenie (ta strona)</div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
+            <div className="text-2xl font-bold text-gray-900">
+              {items.filter(i => i.rating >= 8).length}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Wysokie zmęczenie (≥8)</div>
+          </div>
+        </div>
+      )}
 
       {/* Tabela */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">

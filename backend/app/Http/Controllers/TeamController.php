@@ -51,9 +51,9 @@ class TeamController extends Controller
             $query->orderBy($sortBy, $sortDir);
         }
 
-        // Eager load coach details to display who coaches the team
-        $query->with(['coach' => function ($q) {
-            $q->select('id', 'first_name', 'last_name', 'email');
+        // Eager load coaches details to display who coaches the team
+        $query->with(['coaches' => function ($q) {
+            $q->select('users.id', 'first_name', 'last_name', 'email');
         }]);
 
         // Pagination
@@ -119,29 +119,52 @@ class TeamController extends Controller
     )]
     public function store(Request $request)
     {
+        // Normalise single coach_id into coaches array if needed
+        if ($request->has('coach_id') && !$request->has('coaches')) {
+            $request->merge([
+                'coaches' => [
+                    [
+                        'user_id' => $request->input('coach_id'),
+                        'role' => 'Główny trener',
+                    ]
+                ]
+            ]);
+        }
+
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'coach_id' => ['required', 'uuid', 'exists:users,id'],
+            'coaches' => ['required', 'array'],
+            'coaches.*.user_id' => ['required', 'uuid', 'exists:users,id'],
+            'coaches.*.role' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
-        $coach = User::query()
-            ->where('id', $validatedData['coach_id'])
-            ->where('role', 'coach')
-            ->first();
-
-        if (!$coach) {
-            return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
+        $coachIds = collect($validatedData['coaches'])->pluck('user_id');
+        if ($coachIds->duplicates()->isNotEmpty()) {
+            return response()->json(['message' => 'Ten sam trener nie może być przypisany do drużyny więcej niż jeden raz.'], 422);
         }
 
-        // Enforce one coach per team rule
-        $alreadyAssigned = Team::query()
-            ->where('coach_id', $validatedData['coach_id'])
-            ->exists();
+        $headCoachesCount = collect($validatedData['coaches'])->where('role', 'Główny trener')->count();
+        if ($headCoachesCount !== 1) {
+            return response()->json(['message' => 'Drużyna musi mieć dokładnie jednego Głównego trenera.'], 422);
+        }
 
-        if ($alreadyAssigned) {
-            return response()->json(['message' => 'Wybrany trener jest już przypisany do innej drużyny.'], 422);
+        foreach ($validatedData['coaches'] as $c) {
+            $user = User::query()->find($c['user_id']);
+            if (!$user || $user->role !== 'coach') {
+                return response()->json(['message' => "Użytkownik o ID {$c['user_id']} nie jest trenerem."], 422);
+            }
+
+            if ($c['role'] === 'Główny trener') {
+                $alreadyHead = \Illuminate\Support\Facades\DB::table('team_coaches')
+                    ->where('user_id', $c['user_id'])
+                    ->where('role', 'Główny trener')
+                    ->exists();
+                if ($alreadyHead) {
+                    return response()->json(['message' => "Trener {$user->first_name} {$user->last_name} jest już Głównym trenerem w innej drużynie."], 422);
+                }
+            }
         }
 
         if ($request->hasFile('logo')) {
@@ -149,8 +172,20 @@ class TeamController extends Controller
             $validatedData['logo_path'] = $path;
         }
 
-        $team = Team::query()->create($validatedData);
-        $team->load(['coach:id,first_name,last_name,email']);
+        $team = Team::query()->create([
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'] ?? null,
+            'logo_path' => $validatedData['logo_path'] ?? null,
+        ]);
+
+        foreach ($validatedData['coaches'] as $c) {
+            $team->coaches()->attach($c['user_id'], [
+                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'role' => $c['role'],
+            ]);
+        }
+
+        $team->load(['coaches:id,first_name,last_name,email']);
 
         return response()->json([
             'message' => 'Team created successfully.',
@@ -184,7 +219,7 @@ class TeamController extends Controller
     public function show(string $id)
     {
         $team = Team::query()
-            ->with(['coach:id,first_name,last_name,email'])
+            ->with(['coaches:id,first_name,last_name,email'])
             ->find($id);
 
         if (!$team) {
@@ -238,31 +273,53 @@ class TeamController extends Controller
             return response()->json(['message' => 'Team not found.'], 404);
         }
 
+        if ($request->has('coach_id') && !$request->has('coaches')) {
+            $request->merge([
+                'coaches' => [
+                    [
+                        'user_id' => $request->input('coach_id'),
+                        'role' => 'Główny trener',
+                    ]
+                ]
+            ]);
+        }
+
         $validatedData = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'coach_id' => ['sometimes', 'required', 'uuid', 'exists:users,id'],
+            'coaches' => ['sometimes', 'required', 'array'],
+            'coaches.*.user_id' => ['required', 'uuid', 'exists:users,id'],
+            'coaches.*.role' => ['required', 'string', 'max:255'],
             'logo' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
-        if (array_key_exists('coach_id', $validatedData)) {
-            $coach = User::query()
-                ->where('id', $validatedData['coach_id'])
-                ->where('role', 'coach')
-                ->first();
-
-            if (!$coach) {
-                return response()->json(['message' => 'Wybrany użytkownik nie jest trenerem.'], 422);
+        if (array_key_exists('coaches', $validatedData)) {
+            $coachIds = collect($validatedData['coaches'])->pluck('user_id');
+            if ($coachIds->duplicates()->isNotEmpty()) {
+                return response()->json(['message' => 'Ten sam trener nie może być przypisany do drużyny więcej niż jeden raz.'], 422);
             }
 
-            // Enforce one coach per team rule
-            $alreadyAssigned = Team::query()
-                ->where('coach_id', $validatedData['coach_id'])
-                ->where('id', '!=', $id)
-                ->exists();
+            $headCoachesCount = collect($validatedData['coaches'])->where('role', 'Główny trener')->count();
+            if ($headCoachesCount !== 1) {
+                return response()->json(['message' => 'Drużyna musi mieć dokładnie jednego Głównego trenera.'], 422);
+            }
 
-            if ($alreadyAssigned) {
-                return response()->json(['message' => 'Wybrany trener jest już przypisany do innej drużyny.'], 422);
+            foreach ($validatedData['coaches'] as $c) {
+                $user = User::query()->find($c['user_id']);
+                if (!$user || $user->role !== 'coach') {
+                    return response()->json(['message' => "Użytkownik o ID {$c['user_id']} nie jest trenerem."], 422);
+                }
+
+                if ($c['role'] === 'Główny trener') {
+                    $alreadyHead = \Illuminate\Support\Facades\DB::table('team_coaches')
+                        ->where('user_id', $c['user_id'])
+                        ->where('role', 'Główny trener')
+                        ->where('team_id', '!=', $id)
+                        ->exists();
+                    if ($alreadyHead) {
+                        return response()->json(['message' => "Trener {$user->first_name} {$user->last_name} jest już Głównym trenerem w innej drużynie."], 422);
+                    }
+                }
             }
         }
 
@@ -281,8 +338,23 @@ class TeamController extends Controller
             $validatedData['logo_path'] = null;
         }
 
-        $team->update($validatedData);
-        $team->load(['coach:id,first_name,last_name,email']);
+        $team->update([
+            'name' => $validatedData['name'] ?? $team->name,
+            'description' => array_key_exists('description', $validatedData) ? $validatedData['description'] : $team->description,
+            'logo_path' => array_key_exists('logo_path', $validatedData) ? $validatedData['logo_path'] : $team->logo_path,
+        ]);
+
+        if (array_key_exists('coaches', $validatedData)) {
+            $team->coaches()->detach();
+            foreach ($validatedData['coaches'] as $c) {
+                $team->coaches()->attach($c['user_id'], [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'role' => $c['role'],
+                ]);
+            }
+        }
+
+        $team->load(['coaches:id,first_name,last_name,email']);
 
         return response()->json([
             'message' => 'Team updated successfully.',
@@ -344,22 +416,7 @@ class TeamController extends Controller
     )]
     public function coaches(Request $request)
     {
-        $excludeTeamId = $request->query('exclude_team_id');
-
-        $query = User::query()
-            ->where('role', 'coach');
-
-        // Only select coaches that do not coach any team, 
-        // unless they are currently assigned to the team being edited ($excludeTeamId)
-        $query->where(function ($q) use ($excludeTeamId) {
-            $q->whereDoesntHave('coachedTeams')
-              ->when($excludeTeamId, function ($inner) use ($excludeTeamId) {
-                  $inner->orWhereHas('coachedTeams', function ($teamQuery) use ($excludeTeamId) {
-                      $teamQuery->where('id', $excludeTeamId);
-                  });
-              });
-        });
-
+        $query = User::query()->where('role', 'coach');
         $coaches = $query->select(['id', 'first_name', 'last_name', 'email'])
             ->orderBy('last_name')
             ->orderBy('first_name')
@@ -378,7 +435,9 @@ class TeamController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $query = Team::query()->where('coach_id', $user->id);
+        $query = Team::query()->whereHas('coaches', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        });
 
         if ($request->filled('search')) {
             $search = $request->input('search');

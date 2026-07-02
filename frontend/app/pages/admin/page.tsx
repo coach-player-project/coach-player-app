@@ -321,18 +321,20 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="bg-card p-6 md:p-8 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Zarządzanie Użytkownikami
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Przeglądaj, dodawaj, edytuj i usuwaj konta użytkowników w systemie.
-          </p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-900 text-white rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-950/20">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center w-full">
+          <div className="flex items-center gap-3">
+            <User className="h-10 w-10 text-blue-400 shrink-0" />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Zarządzanie Użytkownikami</h1>
+              <p className="text-blue-200 text-sm md:text-base">Przeglądaj, dodawaj, edytuj i usuwaj konta użytkowników w systemie.</p>
+            </div>
+          </div>
+          <Button onClick={openCreateForm} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-md h-11 px-5 font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/30 flex items-center shrink-0 rounded-xl">
+            <Plus className="h-5 w-5" /> Dodaj Użytkownika
+          </Button>
         </div>
-        <Button onClick={openCreateForm} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-sm shrink-0">
-          <Plus className="h-4 w-4" /> Dodaj Użytkownika
-        </Button>
       </div>
 
       {/* Operations Feedback Messages */}

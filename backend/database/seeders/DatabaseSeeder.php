@@ -81,8 +81,16 @@ class DatabaseSeeder extends Seeder
             'id' => $teamId,
             'name' => 'KS Fikcyjny Klub',
             'description' => 'Najlepszy wirtualny klub piłkarski w aplikacji.',
-            'coach_id' => $coachId,
             'created_at' => now()->subDays(30),
+        ]);
+
+        DB::table('team_coaches')->insert([
+            'id' => Str::uuid()->toString(),
+            'team_id' => $teamId,
+            'user_id' => $coachId,
+            'role' => 'Główny trener',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         // Create Team 2
@@ -91,8 +99,16 @@ class DatabaseSeeder extends Seeder
             'id' => $team2Id,
             'name' => 'Orły Warszawa',
             'description' => 'Stołeczny klub z tradycjami, gotowy na rywalizację.',
-            'coach_id' => $coach2Id,
             'created_at' => now()->subDays(30),
+        ]);
+
+        DB::table('team_coaches')->insert([
+            'id' => Str::uuid()->toString(),
+            'team_id' => $team2Id,
+            'user_id' => $coach2Id,
+            'role' => 'Główny trener',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         // Create other dummy teams
@@ -120,12 +136,21 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            $extraTeamId = Str::uuid()->toString();
             DB::table('teams')->insert([
-                'id' => Str::uuid()->toString(),
+                'id' => $extraTeamId,
                 'name' => $name,
                 'description' => 'Przykładowa drużyna wygenerowana dla potrzeb testowania paginacji i sortowania SFP.',
-                'coach_id' => $extraCoachId,
                 'created_at' => now()->subDays(rand(1, 100)),
+            ]);
+
+            DB::table('team_coaches')->insert([
+                'id' => Str::uuid()->toString(),
+                'team_id' => $extraTeamId,
+                'user_id' => $extraCoachId,
+                'role' => 'Główny trener',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -287,6 +312,7 @@ class DatabaseSeeder extends Seeder
             'training_sessions',
             'messages',
             'team_members',
+            'team_coaches',
             'teams',
             'personal_access_tokens',
             'users',

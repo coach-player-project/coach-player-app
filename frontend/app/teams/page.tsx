@@ -21,6 +21,9 @@ interface Coach {
   id: string;
   first_name: string;
   last_name: string;
+  pivot?: {
+    role: string;
+  };
 }
 
 interface Team {
@@ -29,6 +32,7 @@ interface Team {
   description: string | null;
   created_at: string;
   coach: Coach | null;
+  coaches?: Coach[];
   logo_url?: string;
 }
 
@@ -222,16 +226,44 @@ export default function TeamsPage() {
                     {team.description || "Brak opisu drużyny. Drużyna wciąż przygotowuje swoją historię..."}
                   </p>
 
-                  <div className="pt-4 border-t border-white/10 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
-                      <UserCircle2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-slate-300">Trener Szkoleniowiec</span>
-                      <span className="text-xs text-slate-500">
-                        {team.coach ? `${team.coach.first_name} ${team.coach.last_name}` : "Brak przypisanego"}
-                      </span>
-                    </div>
+                  <div className="pt-4 border-t border-white/10 flex flex-col gap-2">
+                    {team.coaches && team.coaches.length > 0 ? (
+                      team.coaches.map((c) => (
+                        <div key={c.id} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                            <UserCircle2 className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-slate-300">{c.pivot?.role ?? "Główny trener"}</span>
+                            <span className="text-xs text-slate-500">
+                              {c.first_name} {c.last_name}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : team.coach ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                          <UserCircle2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-slate-300">Główny trener</span>
+                          <span className="text-xs text-slate-500">
+                            {team.coach.first_name} {team.coach.last_name}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                          <UserCircle2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-slate-300">Sztab szkoleniowy</span>
+                          <span className="text-xs text-slate-500">Brak przypisanego</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
