@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Play, RotateCcw, Trash2, Undo, Move, Pencil, Type, Check, Plus, Flag } from "lucide-react"
+import { Play, RotateCcw, Trash2, Undo, Move, Pencil, Type, Check, Plus, Flag, User, UserX } from "lucide-react"
 
 // Types for tactical board state serialization
 export interface TacticalItem {
@@ -106,6 +106,109 @@ const FORMATION_PRESETS: Record<string, { x: number; y: number }[]> = {
   ]
 }
 
+const DRILL_PRESETS: Record<string, () => TacticalItem[]> = {
+  "Mecz 11v11": () => {
+    const items: TacticalItem[] = []
+    const positions = FORMATION_PRESETS["4-4-2"]
+    positions.forEach((pos, index) => {
+      const playerNum = index + 1
+      let role = "PO"
+      if (index === 0) role = "BR"
+      else if (index <= 4) role = "OB"
+      else if (index <= 8) role = "PO"
+      else role = "NA"
+
+      items.push({
+        id: `h-${playerNum}`,
+        label: `${playerNum}`,
+        role,
+        x: pos.x,
+        y: pos.y,
+        color: "blue",
+        type: "player"
+      })
+    })
+
+    positions.forEach((pos, index) => {
+      const playerNum = index + 1
+      let role = "PO"
+      if (index === 0) role = "BR"
+      else if (index <= 4) role = "OB"
+      else if (index <= 8) role = "PO"
+      else role = "NA"
+
+      items.push({
+        id: `o-${playerNum}`,
+        label: `O${playerNum}`,
+        role,
+        x: 1 - pos.x,
+        y: pos.y,
+        color: "red",
+        type: "opponent"
+      })
+    })
+
+    items.push({
+      id: "ball",
+      label: "B",
+      role: "P",
+      x: 0.5,
+      y: 0.5,
+      color: "white",
+      type: "ball"
+    })
+
+    items.push(
+      { id: "cone-1", label: "P", role: "C", x: 0.15, y: 0.88, color: "orange", type: "cone" },
+      { id: "cone-2", label: "P", role: "C", x: 0.85, y: 0.88, color: "orange", type: "cone" }
+    )
+
+    return items
+  },
+  "Rondo (5v2)": () => [
+    { id: "h-1", label: "1", role: "PO", x: 0.35, y: 0.30, color: "blue", type: "player" },
+    { id: "h-2", label: "2", role: "PO", x: 0.65, y: 0.30, color: "blue", type: "player" },
+    { id: "h-3", label: "3", role: "PO", x: 0.75, y: 0.55, color: "blue", type: "player" },
+    { id: "h-4", label: "4", role: "PO", x: 0.50, y: 0.75, color: "blue", type: "player" },
+    { id: "h-5", label: "5", role: "PO", x: 0.25, y: 0.55, color: "blue", type: "player" },
+    { id: "o-1", label: "O1", role: "PO", x: 0.45, y: 0.48, color: "red", type: "opponent" },
+    { id: "o-2", label: "O2", role: "PO", x: 0.55, y: 0.52, color: "red", type: "opponent" },
+    { id: "ball", label: "B", role: "P", x: 0.37, y: 0.35, color: "white", type: "ball" },
+    { id: "cone-1", label: "P", role: "C", x: 0.20, y: 0.20, color: "orange", type: "cone" },
+    { id: "cone-2", label: "P", role: "C", x: 0.80, y: 0.20, color: "orange", type: "cone" },
+    { id: "cone-3", label: "P", role: "C", x: 0.80, y: 0.80, color: "orange", type: "cone" },
+    { id: "cone-4", label: "P", role: "C", x: 0.20, y: 0.80, color: "orange", type: "cone" },
+  ],
+  "Gra pomocnicza (4v4 + 2BR)": () => [
+    { id: "h-1", label: "BR1", role: "BR", x: 0.08, y: 0.50, color: "blue", type: "player" },
+    { id: "o-1", label: "BR2", role: "BR", x: 0.92, y: 0.50, color: "red", type: "opponent" },
+    { id: "h-2", label: "2", role: "OB", x: 0.30, y: 0.35, color: "blue", type: "player" },
+    { id: "h-3", label: "3", role: "OB", x: 0.30, y: 0.65, color: "blue", type: "player" },
+    { id: "h-4", label: "4", role: "NA", x: 0.45, y: 0.30, color: "blue", type: "player" },
+    { id: "h-5", label: "5", role: "NA", x: 0.45, y: 0.70, color: "blue", type: "player" },
+    { id: "o-2", label: "O2", role: "OB", x: 0.70, y: 0.35, color: "red", type: "opponent" },
+    { id: "o-3", label: "O3", role: "OB", x: 0.70, y: 0.65, color: "red", type: "opponent" },
+    { id: "o-4", label: "O4", role: "NA", x: 0.55, y: 0.30, color: "red", type: "opponent" },
+    { id: "o-5", label: "O5", role: "NA", x: 0.55, y: 0.70, color: "red", type: "opponent" },
+    { id: "ball", label: "B", role: "P", x: 0.50, y: 0.50, color: "white", type: "ball" },
+    { id: "cone-1", label: "P", role: "C", x: 0.20, y: 0.15, color: "orange", type: "cone" },
+    { id: "cone-2", label: "P", role: "C", x: 0.80, y: 0.15, color: "orange", type: "cone" },
+    { id: "cone-3", label: "P", role: "C", x: 0.80, y: 0.85, color: "orange", type: "cone" },
+    { id: "cone-4", label: "P", role: "C", x: 0.20, y: 0.85, color: "orange", type: "cone" },
+  ],
+  "Atak 1v1 + BR": () => [
+    { id: "o-1", label: "BR", role: "BR", x: 0.08, y: 0.50, color: "red", type: "opponent" },
+    { id: "o-2", label: "O1", role: "OB", x: 0.25, y: 0.50, color: "red", type: "opponent" },
+    { id: "h-1", label: "1", role: "NA", x: 0.45, y: 0.50, color: "blue", type: "player" },
+    { id: "ball", label: "B", role: "P", x: 0.48, y: 0.50, color: "white", type: "ball" },
+    { id: "cone-1", label: "P", role: "C", x: 0.35, y: 0.25, color: "orange", type: "cone" },
+    { id: "cone-2", label: "P", role: "C", x: 0.35, y: 0.75, color: "orange", type: "cone" },
+    { id: "cone-3", label: "P", role: "C", x: 0.60, y: 0.25, color: "orange", type: "cone" },
+    { id: "cone-4", label: "P", role: "C", x: 0.60, y: 0.75, color: "orange", type: "cone" },
+  ],
+  "Pusta tablica": () => []
+}
+
 const PLAYER_ROLES = ["BR", "OB", "PO", "NA"]
 
 export function TacticalBoard({ initialData, readOnly = false, onSave }: TacticalBoardProps) {
@@ -117,7 +220,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
   const playerRadius = 16
 
   // Mode & Drawing states
-  const [toolMode, setToolMode] = useState<"move" | "freehand" | "arrow" | "dotted" | "cone">("move")
+  const [toolMode, setToolMode] = useState<"move" | "freehand" | "arrow" | "dotted" | "cone" | "player" | "opponent" | "ball">("move")
   const [penColor, setPenColor] = useState<string>("#ffffff")
   const [formation, setFormation] = useState<string>("4-4-2")
   const [notes, setNotes] = useState<string>("")
@@ -170,17 +273,49 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     }
   }
 
-  const handleAddCone = () => {
-    const newCone: TacticalItem = {
-      id: `cone-${Date.now()}`,
-      label: "P",
-      role: "C",
+  const handleAddItem = (type: "player" | "opponent" | "ball" | "cone") => {
+    let color: "blue" | "red" | "white" | "orange" = "blue"
+    let label = ""
+    let role = ""
+    
+    if (type === "player") {
+      color = "blue"
+      const currentBlueCount = items.filter(i => i.type === "player").length
+      label = `${currentBlueCount + 1}`
+      role = currentBlueCount === 0 ? "BR" : "PO"
+    } else if (type === "opponent") {
+      color = "red"
+      const currentRedCount = items.filter(i => i.type === "opponent").length
+      label = `O${currentRedCount + 1}`
+      role = currentRedCount === 0 ? "BR" : "PO"
+    } else if (type === "ball") {
+      color = "white"
+      label = "B"
+      role = "P"
+    } else {
+      color = "orange"
+      label = "P"
+      role = "C"
+    }
+
+    const newItem: TacticalItem = {
+      id: `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      label,
+      role,
       x: 0.5,
       y: 0.5,
-      color: "orange",
-      type: "cone"
+      color,
+      type
     }
-    setItems((prev) => [...prev, newCone])
+    setItems((prev) => [...prev, newItem])
+  }
+
+  const handleDrillChange = (drillName: string) => {
+    const loader = DRILL_PRESETS[drillName]
+    if (loader) {
+      setItems(loader())
+      setDrawings([])
+    }
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -190,15 +325,14 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     let foundIndex = -1
     for (let i = items.length - 1; i >= 0; i--) {
       const item = items[i]
-      if (item.type !== "cone") continue
-
       const px = item.x * canvasWidth
       const py = item.y * canvasHeight
       const clickX = x * canvasWidth
       const clickY = y * canvasHeight
       const dist = Math.sqrt((px - clickX) ** 2 + (py - clickY) ** 2)
 
-      if (dist <= 14) {
+      const hitRadius = item.type === "player" || item.type === "opponent" ? 16 : (item.type === "cone" ? 11 : 9)
+      if (dist <= hitRadius + 4) {
         foundIndex = i
         break
       }
@@ -500,17 +634,49 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
     if (readOnly) return
     const { x, y } = getRelativeCoords(e)
 
-    if (toolMode === "cone") {
-      const newCone: TacticalItem = {
-        id: `cone-${Date.now()}`,
-        label: "P",
-        role: "C",
+    if (toolMode === "cone" || toolMode === "player" || toolMode === "opponent" || toolMode === "ball") {
+      let color: "blue" | "red" | "white" | "orange" = "blue"
+      let label = ""
+      let role = ""
+      let type: "player" | "opponent" | "ball" | "cone" = "player"
+      
+      if (toolMode === "player") {
+        color = "blue"
+        type = "player"
+        const currentBlueCount = items.filter(i => i.type === "player").length
+        label = `${currentBlueCount + 1}`
+        role = currentBlueCount === 0 ? "BR" : "PO"
+      } else if (toolMode === "opponent") {
+        color = "red"
+        type = "opponent"
+        const currentRedCount = items.filter(i => i.type === "opponent").length
+        label = `O${currentRedCount + 1}`
+        role = currentRedCount === 0 ? "BR" : "PO"
+      } else if (toolMode === "ball") {
+        color = "white"
+        type = "ball"
+        label = "B"
+        role = "P"
+      } else {
+        color = "orange"
+        type = "cone"
+        label = "P"
+        role = "C"
+      }
+
+      const newItem: TacticalItem = {
+        id: `${type}-${Date.now()}`,
+        label,
+        role,
         x,
         y,
-        color: "orange",
-        type: "cone"
+        color,
+        type
       }
-      setItems((prev) => [...prev, newCone])
+      setItems((prev) => [...prev, newItem])
+      if (toolMode === "ball") {
+        setToolMode("move")
+      }
       return
     }
 
@@ -673,8 +839,45 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
               </button>
             </div>
 
+            {/* Manual item addition */}
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => setToolMode("player")}
+                className={`px-3 py-2 flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  toolMode === "player" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50 text-blue-600"
+                }`}
+                title="Dodaj zawodnika (Niebieski)"
+              >
+                <User className="h-4 w-4" />
+                <span>+ Zawodnik</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setToolMode("opponent")}
+                className={`px-3 py-2 flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  toolMode === "opponent" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50 text-red-600"
+                }`}
+                title="Dodaj przeciwnika (Czerwony)"
+              >
+                <User className="h-4 w-4" />
+                <span>+ Przeciwnik</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setToolMode("ball")}
+                className={`px-3 py-2 flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  toolMode === "ball" ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-50 text-gray-800"
+                }`}
+                title="Dodaj piłkę"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Piłka</span>
+              </button>
+            </div>
+
             {/* Colors */}
-            {toolMode !== "move" && toolMode !== "cone" && (
+            {toolMode !== "move" && toolMode !== "cone" && toolMode !== "player" && toolMode !== "opponent" && toolMode !== "ball" && (
               <div className="flex gap-2 p-1 bg-gray-50 rounded-lg border border-gray-200 shrink-0">
                 {["#ffffff", "#ff4444", "#ffeb3b", "#000000"].map((c) => (
                   <button
@@ -712,6 +915,27 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
               </select>
             </div>
 
+            {/* Drill presets */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ćwiczenie:</span>
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleDrillChange(e.target.value)
+                  }
+                }}
+                defaultValue=""
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="" disabled>-- Wybierz szablon --</option>
+                {Object.keys(DRILL_PRESETS).map((preset) => (
+                  <option key={preset} value={preset}>
+                    {preset}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Show Opponents Toggle */}
             <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 cursor-pointer select-none">
               <input
@@ -723,9 +947,19 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
               <span>Przeciwnicy</span>
             </label>
 
-
-
             {/* Reset / Actions */}
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Czy na pewno chcesz usunąć wszystkich zawodników i pachołki z tablicy?")) {
+                  setItems([])
+                }
+              }}
+              className="p-2 text-gray-600 hover:text-red-650 bg-gray-100 hover:bg-red-50 rounded-lg transition-colors"
+              title="Wyczyść wszystkich zawodników i pachołki z tablicy"
+            >
+              <UserX className="h-4 w-4" />
+            </button>
             <button
               type="button"
               onClick={() => loadDefaultPitch()}
@@ -817,7 +1051,7 @@ export function TacticalBoard({ initialData, readOnly = false, onSave }: Tactica
             
             {!readOnly && (
               <div className="text-[10px] text-gray-400 text-center italic mt-2 pt-2 border-t border-gray-50">
-                💡 Dwukrotne kliknięcie na pachołek usuwa go z tablicy.
+                💡 Dwukrotne kliknięcie na dowolny element (zawodnika, piłkę, pachołek) usuwa go z tablicy.
               </div>
             )}
           </div>
